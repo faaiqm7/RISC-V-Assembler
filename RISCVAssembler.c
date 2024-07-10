@@ -594,36 +594,6 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     
 }
 
-void NOP_Handle()
-{
-
-}
-
-void SLLI_Handle()
-{
-
-}
-
-void SRLI_Handle()
-{
-
-}
-
-void SRAI_Handle()
-{
-
-}
-
-void LUI_Handle()
-{
-
-}
-
-void AUPIC_Handle()
-{
-
-}
-
 void ADD_Handle()
 {
 
