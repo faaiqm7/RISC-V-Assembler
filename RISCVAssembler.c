@@ -5,8 +5,8 @@
 #define BUFFER_SIZE 65536
 
 /*RISC-V Instructions*/
-char IRII[36][5] = {"ADDI", "ANDI","OIR","XORI","SLTI","NOP",
-                    "SLLI","SRLI","SRAI","LUI","AUPIC","ADD",
+char IRII[36][5] = {"ADDI", "ANDI","ORI","XORI","SLTI","NOP",
+                    "SLLI","SRLI","SRAI","LUI","AUIPC","ADD",
                     "SLT","SLTU","AND","OR","XOR","SLL",
                     "SRL","SUB","SRA","JAL","JALR","BEQ",
                     "BNE","BLT","BGE","LW","LH","LHU",
@@ -63,7 +63,7 @@ int main(void) {
             {
                 IRII_Handle(buffer, Machine_File, buffer_instruction);
             }
-            else if(strcmp(buffer_instruction, "OIR") == 0)
+            else if(strcmp(buffer_instruction, "ORI") == 0)
             {
                 IRII_Handle(buffer, Machine_File, buffer_instruction);
             }
@@ -95,7 +95,7 @@ int main(void) {
             {
                 
             }
-            else if(strcmp(buffer_instruction, "AUPIC") == 0)
+            else if(strcmp(buffer_instruction, "AUIPC") == 0)
             {
                 
             }
@@ -244,7 +244,7 @@ void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray)
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5])
 {
     char buffer_machine[33];
-    if(strcmp(instruction_header,"ADDI") == 0 || strcmp(instruction_header,"ANDI") == 0 || strcmp(instruction_header,"OIR") == 0 || strcmp(instruction_header,"XORI") == 0 || 
+    if(strcmp(instruction_header,"ADDI") == 0 || strcmp(instruction_header,"ANDI") == 0 || strcmp(instruction_header,"ORI") == 0 || strcmp(instruction_header,"XORI") == 0 || 
        strcmp(instruction_header,"SLTI") == 0)
        {
 
@@ -339,10 +339,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //Input opcode (BITS [6:0])
                 buffer_machine[25] = '0';
                 buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
+                buffer_machine[27] = '1';
                 buffer_machine[28] = '0';
                 buffer_machine[29] = '0';
-                buffer_machine[30] = '0';
+                buffer_machine[30] = '1';
                 buffer_machine[31] = '1';
 
             }
@@ -352,33 +352,33 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //    ANDI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '0';
-                buffer_machine[18] = '0';
+                buffer_machine[17] = '1';
+                buffer_machine[18] = '1';
                 buffer_machine[19] = '1';
 
                 //Input opcode (BITS [6:0])
                 buffer_machine[25] = '0';
                 buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
+                buffer_machine[27] = '1';
                 buffer_machine[28] = '0';
                 buffer_machine[29] = '0';
                 buffer_machine[30] = '1';
-                buffer_machine[31] = '0';
+                buffer_machine[31] = '1';
             }
-            else if(strcmp(instruction_header, "OIR") == 0)
+            else if(strcmp(instruction_header, "ORI") == 0)
             {
-                //Ex. OIR Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
-                //    OIR R25,R12,#6
+                //Ex. ORI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
+                //    ORI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '0';
+                buffer_machine[17] = '1';
                 buffer_machine[18] = '1';
                 buffer_machine[19] = '0';
 
                 //Input opcode (BITS [6:0])
                 buffer_machine[25] = '0';
                 buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
+                buffer_machine[27] = '1';
                 buffer_machine[28] = '0';
                 buffer_machine[29] = '0';
                 buffer_machine[30] = '1';
@@ -390,25 +390,6 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //    XORI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '0';
-                buffer_machine[18] = '1';
-                buffer_machine[19] = '1';
-
-                //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '1';
-                buffer_machine[30] = '0';
-                buffer_machine[31] = '0';
-            }
-            else if(strcmp(instruction_header, "SLTI") == 0)
-            {
-                //Ex. SLTI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
-                //    SLTI R25,R12,#6
-
-                //Input funct3 (BITS [14:12])
                 buffer_machine[17] = '1';
                 buffer_machine[18] = '0';
                 buffer_machine[19] = '0';
@@ -416,10 +397,29 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //Input opcode (BITS [6:0])
                 buffer_machine[25] = '0';
                 buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
+                buffer_machine[27] = '1';
                 buffer_machine[28] = '0';
-                buffer_machine[29] = '1';
-                buffer_machine[30] = '0';
+                buffer_machine[29] = '0';
+                buffer_machine[30] = '1';
+                buffer_machine[31] = '1';
+            }
+            else if(strcmp(instruction_header, "SLTI") == 0)
+            {
+                //Ex. SLTI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
+                //    SLTI R25,R12,#6
+
+                //Input funct3 (BITS [14:12])
+                buffer_machine[17] = '0';
+                buffer_machine[18] = '1';
+                buffer_machine[19] = '0';
+
+                //Input opcode (BITS [6:0])
+                buffer_machine[25] = '0';
+                buffer_machine[26] = '0';
+                buffer_machine[27] = '1';
+                buffer_machine[28] = '0';
+                buffer_machine[29] = '0';
+                buffer_machine[30] = '1';
                 buffer_machine[31] = '1';
             }
     }
@@ -433,10 +433,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         //opcode
         buffer_machine[25] = '0';
         buffer_machine[26] = '0';
-        buffer_machine[27] = '0';
+        buffer_machine[27] = '1';
         buffer_machine[28] = '0';
         buffer_machine[29] = '0';
-        buffer_machine[30] = '0';
+        buffer_machine[30] = '1';
         buffer_machine[31] = '1';
     }
     else if(strcpy(instruction_header, "SLLI") == 0 || strcpy(instruction_header, "SRLI") == 0 || strcpy(instruction_header, "SRAI"))
@@ -536,6 +536,22 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             if(strcmp(instruction_header, "SLLI") == 0)
             {
                 //Input funct3 (BITS [14:12])
+                buffer_machine[17] = '0';
+                buffer_machine[18] = '0';
+                buffer_machine[19] = '1';
+
+                //Input opcode (BITS [6:0])
+                buffer_machine[25] = '0';
+                buffer_machine[26] = '0';
+                buffer_machine[27] = '1';
+                buffer_machine[28] = '0';
+                buffer_machine[29] = '0';
+                buffer_machine[30] = '1';
+                buffer_machine[31] = '1';
+            }
+            else if(strcmp(instruction_header, "SRLI") == 0)
+            {
+                //Input funct3 (BITS [14:12])
                 buffer_machine[17] = '1';
                 buffer_machine[18] = '0';
                 buffer_machine[19] = '1';
@@ -543,49 +559,108 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //Input opcode (BITS [6:0])
                 buffer_machine[25] = '0';
                 buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
-                buffer_machine[28] = '1';
+                buffer_machine[27] = '1';
+                buffer_machine[28] = '0';
                 buffer_machine[29] = '0';
-                buffer_machine[30] = '0';
-                buffer_machine[31] = '0';
-            }
-            else if(strcmp(instruction_header, "SRLI") == 0)
-            {
-                //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '1';
-                buffer_machine[18] = '1';
-                buffer_machine[19] = '0';
-
-                //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
-                buffer_machine[28] = '1';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '0';
+                buffer_machine[30] = '1';
                 buffer_machine[31] = '1';
             }
             else if(strcmp(instruction_header, "SRAI") == 0)
             {
                 //Input funct3 (BITS [14:12])
                 buffer_machine[17] = '1';
-                buffer_machine[18] = '1';
+                buffer_machine[18] = '0';
                 buffer_machine[19] = '1';
 
                 //Input opcode (BITS [6:0])
                 buffer_machine[25] = '0';
                 buffer_machine[26] = '0';
-                buffer_machine[27] = '0';
-                buffer_machine[28] = '1';
+                buffer_machine[27] = '1';
+                buffer_machine[28] = '0';
                 buffer_machine[29] = '0';
                 buffer_machine[30] = '1';
-                buffer_machine[31] = '0';
+                buffer_machine[31] = '1';
             }
     }
-    else if(strcpy(instruction_header, "LUI") == 0 || strcpy(instruction_header, "AUPIC") == 0)
+    else if(strcpy(instruction_header, "LUI") == 0 || strcpy(instruction_header, "AUIPC") == 0)
     {
         //Ex. LUI R4,#imm
-        //Ex. AUPIC R5,#imm
+        //Ex. AUIPC R5,#imm
+
+        //Input Imm[19:0] (BITS [31:12])
+            int imm[20];
+            char imm_string[8];
+            strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 7);
+            strcat(imm_string, "\0");
+            dec_To_Binary(atoi(imm_string), &imm, 12);
+            int startingIndex = 0;
+            for(int i = 0; i < 20 - 1; i++)
+            {
+                if(imm[i] > 1)
+                {
+                    startingIndex = i + 1;
+                }
+            }
+            for(int i = 0; i < 20; i++)
+            {
+                if(i >= startingIndex)
+                {
+                    buffer_machine[i] = imm[i] +'0';
+                }
+                else
+                {
+                    buffer_machine[i] = '0';
+                }
+            }
+        //Input RD (BITS [11:7])
+            int rd[5];
+            char rd_string[3];
+            strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
+            strcat(rd_string, "\0");
+            dec_To_Binary(atoi(rd_string), &rd, 5);
+            startingIndex = 0;
+            for(int i = 0; i < 5 - 1; i++)
+            {
+                if(rd[i] > 1)
+                {
+                    startingIndex = i + 1;
+                }
+            }
+            for(int i = 0; i < 5; i++)
+            {
+                if(i >= startingIndex)
+                {
+                    buffer_machine[20 + i] = rd[i] +'0';
+                }
+                else
+                {
+                    buffer_machine[20 + i] = '0';
+                }
+            }
+
+            if(strcmp(instruction_header, "LUI") == 0)
+            {
+                //Input opcode (BITS [6:0])
+                buffer_machine[25] = '0';
+                buffer_machine[26] = '1';
+                buffer_machine[27] = '1';
+                buffer_machine[28] = '0';
+                buffer_machine[29] = '1';
+                buffer_machine[30] = '1';
+                buffer_machine[31] = '1';
+            }
+            else if(strcmp(instruction_header, "AUIPC") == 0)
+            {
+                //Input opcode (BITS [6:0])
+                buffer_machine[25] = '0';
+                buffer_machine[26] = '0';
+                buffer_machine[27] = '1';
+                buffer_machine[28] = '0';
+                buffer_machine[29] = '1';
+                buffer_machine[30] = '1';
+                buffer_machine[31] = '1';
+            }
+
     }
 
     //New Line Character (not related)
