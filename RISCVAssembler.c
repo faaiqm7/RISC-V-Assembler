@@ -55,144 +55,41 @@ int main(void) {
             strncpy(buffer_instruction, buffer, 4);
             strcat(buffer_instruction, "\0");
             
-            if(strcmp(buffer_instruction, "ADDI") == 0)
+            //IRII (I-Type Instructions)
+            if(strcmp(buffer_instruction, "ADDI") == 0 || strcmp(buffer_instruction, "ANDI") == 0 || strcmp(buffer_instruction, "ORI") == 0 ||
+               strcmp(buffer_instruction, "XORI") == 0 || strcmp(buffer_instruction, "SLTI") == 0 || strcmp(buffer_instruction, "NOP") == 0 ||
+               strcmp(buffer_instruction, "SLLI") == 0 || strcmp(buffer_instruction, "SRLI") == 0 || strcmp(buffer_instruction, "SRAI") == 0 ||
+               strcmp(buffer_instruction, "LUI") == 0  || strcmp(buffer_instruction, "AUIPC") == 0)
             {
                 IRII_Handle(buffer, Machine_File, buffer_instruction);
             }
-            else if(strcmp(buffer_instruction, "ANDI") == 0)
-            {
-                IRII_Handle(buffer, Machine_File, buffer_instruction);
-            }
-            else if(strcmp(buffer_instruction, "ORI") == 0)
-            {
-                IRII_Handle(buffer, Machine_File, buffer_instruction);
-            }
-            else if(strcmp(buffer_instruction, "XORI") == 0)
-            {
-                IRII_Handle(buffer, Machine_File, buffer_instruction);
-            }
-            else if(strcmp(buffer_instruction, "SLTI") == 0)
-            {
-                IRII_Handle(buffer, Machine_File, buffer_instruction);
-            }
-            else if(strcmp(buffer_instruction, "NOP") == 0)
+            //IRRI (R-Type Instructions)
+            else if(strcmp(buffer_instruction, "ADD") == 0 || strcmp(buffer_instruction, "SLT") == 0 || strcmp(buffer_instruction, "SLTU") == 0 ||
+                    strcmp(buffer_instruction, "AND") == 0 || strcmp(buffer_instruction, "OR") == 0 || strcmp(buffer_instruction, "XOR") == 0 ||
+                    strcmp(buffer_instruction, "SLL") == 0 || strcmp(buffer_instruction, "SRL") == 0 || strcmp(buffer_instruction, "SUB") == 0 ||
+                    strcmp(buffer_instruction, "SRA") == 0)
             {
                 
             }
-            else if(strcmp(buffer_instruction, "SLLI") == 0)
+            //Control Transfer Instructions (J-Type Instructions)
+            else if(strcmp(buffer_instruction, "JAL") == 0 || strcmp(buffer_instruction, "JALR") == 0)
             {
                 
             }
-            else if(strcmp(buffer_instruction, "SRLI") == 0)
+            //Conditional Branches (B-Type Instructions)
+            else if(strcmp(buffer_instruction, "BEQ") == 0 || strcmp(buffer_instruction, "BNE") == 0 ||
+                    strcmp(buffer_instruction, "BLT") == 0 || strcmp(buffer_instruction, "BGE") == 0) 
             {
                 
             }
-            else if(strcmp(buffer_instruction, "SRAI") == 0)
+            //Load Instructions (I-Type Instructions)
+            else if(strcmp(buffer_instruction, "LW") == 0 || strcmp(buffer_instruction, "LH") == 0 || strcmp(buffer_instruction, "LHU") == 0 ||
+                    strcmp(buffer_instruction, "LB") == 0 || strcmp(buffer_instruction, "LBU") == 0)
             {
                 
             }
-            else if(strcmp(buffer_instruction, "LUI") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "AUIPC") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "ADD") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SLT") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SLTU") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "AND") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "OR") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "XOR") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SLL") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SRL") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SUB") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SRA") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "JAL") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "JALR") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "BEQ") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "BNE") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "BLT") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "BGE") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "LW") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "LH") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "LHU") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "LB") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "LBU") == 0)
-            {
-                
-            }
-            
-            else if(strcmp(buffer_instruction, "SW") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SH") == 0)
-            {
-                
-            }
-            else if(strcmp(buffer_instruction, "SB") == 0)
+            //Store Instructions (S-Type Instructions)
+            else if(strcmp(buffer_instruction, "SW") == 0 || strcmp(buffer_instruction, "SH") == 0 || strcmp(buffer_instruction, "SB") == 0 )
             {
                 
             }
@@ -209,8 +106,6 @@ int main(void) {
     printf("\n\nFile processing finished\n\n");
     fclose(ASM_File);
     fclose(Machine_File);
-
-
 }
 
 int file_number_lines(char asm_file_input_name[32])
@@ -244,17 +139,16 @@ void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray)
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5])
 {
     char buffer_machine[33];
+    int startingIndex = 0;
     if(strcmp(instruction_header,"ADDI") == 0 || strcmp(instruction_header,"ANDI") == 0 || strcmp(instruction_header,"ORI") == 0 || strcmp(instruction_header,"XORI") == 0 || 
        strcmp(instruction_header,"SLTI") == 0)
        {
-
             //Input Imm[11:0] (BITS [31:20])
             int imm[12];
             char imm_string[5];
             strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 4);
             strcat(imm_string, "\0");
             dec_To_Binary(atoi(imm_string), &imm, 12);
-            int startingIndex = 0;
             for(int i = 0; i < 12 - 1; i++)
             {
                 if(imm[i] > 1)
@@ -664,127 +558,289 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     }
 
     //New Line Character (not related)
-    buffer_machine[32] = '\n';
-    fputs(buffer_machine, MACHINE_File_Input);
+    buffer_machine[32] = '\0';
+    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
+}
+
+//Integer Register-Register Instructions Handler
+void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5])
+{
+    char buffer_machine[33];
+    int startingIndex = 0;
+
+    //Input RS2 (BITS [24:20])
+    int rs2[5];
+    char rs2_string[3];
+    strncpy(rs2_string,strstr(buffer_instruction_input, ",R") + 2, 2);
+    strcat(rs2_string, "\0");
+    dec_To_Binary(atoi(rs2_string), &rs2, 5);
+    for(int i = 0; i < 5 - 1; i++)
+    {
+        if(rs2[i] > 1)
+        {
+            startingIndex = i + 1;
+        }
+    }
+    for(int i = 0; i < 5; i++)
+    {
+        if(i >= startingIndex)
+        {
+            buffer_machine[i + 7] = rs2[i] +'0';
+        }
+        else
+        {
+            buffer_machine[i + 7] = '0';
+        }
+    }
+
+    //Input RS1 (BITS [19:15])
+    int rs1[5];
+    char rs1_string[3];
+    strncpy(rs1_string,strstr(buffer_instruction_input, ",R") + 2, 2);
+    strcat(rs1_string, "\0");
+    dec_To_Binary(atoi(rs1_string), &rs1, 5);
+    for(int i = 0; i < 5 - 1; i++)
+    {
+        if(rs1[i] > 1)
+        {
+            startingIndex = i + 1;
+        }
+    }
+    for(int i = 0; i < 5; i++)
+    {
+        if(i >= startingIndex)
+        {
+            buffer_machine[i + 12] = rs1[i] +'0';
+        }
+        else
+        {
+            buffer_machine[i + 12] = '0';
+        }
+    }
+
+    //Input RD (BITS [11:7])
+    int rd[5];
+    char rd_string[3];
+    strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
+    strcat(rd_string, "\0");
+    dec_To_Binary(atoi(rd_string), &rd, 5);
+    startingIndex = 0;
+    for(int i = 0; i < 5 - 1; i++)
+    {
+        if(rd[i] > 1)
+        {
+            startingIndex = i + 1;
+        }
+    }
+    for(int i = 0; i < 5; i++)
+    {
+        if(i >= startingIndex)
+        {
+            buffer_machine[20 + i] = rd[i] +'0';
+        }
+        else
+        {
+            buffer_machine[20 + i] = '0';
+        }
+    }
+
+     //Input opcode (BITS [6:0])
+    buffer_machine[25] = '0';
+    buffer_machine[26] = '1';
+    buffer_machine[27] = '1';
+    buffer_machine[28] = '0';
+    buffer_machine[29] = '0';
+    buffer_machine[30] = '1';
+    buffer_machine[31] = '1';
+
+    if(strcmp(instruction_header, "ADD") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }
+    else if(strcmp(instruction_header, "SUB") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '1';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }
+    else if(strcmp(instruction_header, "SLL") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+    else if(strcmp(instruction_header, "SLT") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '1';
+        buffer_machine[19] = '0';
+    }
+    else if(strcmp(instruction_header, "SLTU") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '1';
+        buffer_machine[19] = '1';
+    }
+    else if(strcmp(instruction_header,"XOR") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }   
+    else if(strcmp(instruction_header, "SRL") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+    else if(strcmp(instruction_header, "SRA") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '1';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+    else if(strcmp(instruction_header, "OR") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '1';
+        buffer_machine[19] = '0';
+    }
+    else if(strcmp(instruction_header, "AND") == 0)
+    {
+        //funct7 (BITS[31:25])
+        buffer_machine[0] = '0';
+        buffer_machine[1] = '0';
+        buffer_machine[2] = '0';
+        buffer_machine[3] = '0';
+        buffer_machine[4] = '0';
+        buffer_machine[5] = '0';
+        buffer_machine[6] = '0';
+
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '1';
+        buffer_machine[19] = '1';
+    }
     
+    //New Line Character (not related)
+    buffer_machine[32] = '\n';
+    fputs(buffer_machine, MACHINE_File_Input); 
 }
 
-void ADD_Handle()
+//Control Transfer Instructions Handler
+void CTI_Handle()
+{
+    //Ex. JAL Rd,#imm
+    //Ex. JALR
+
+}
+
+//Conditional Branches Instructions Handler
+void CBI_Handle()
 {
 
 }
 
-void SLT_Handle()
+//Load Instructions Handler
+void LI_Handle()
 {
 
 }
 
-void SLTU_Handle()
-{
-
-}
-
-void AND_Handle()
-{
-
-}
-
-void OR_Handle()
-{
-
-}
-
-void XOR_Handle()
-{
-
-}
-
-void SLL_Handle()
-{
-
-}
-
-void SRL_Handle()
-{
-
-}
-
-void SUB_Handle()
-{
-
-}
-
-void SRA_Handle()
-{
-
-}
-
-void JAL_Handle()
-{
-
-}
-
-void JALR_Handle()
-{
-
-}
-
-void BEQ_Handle()
-{
-
-}
-
-void BNE_Handle()
-{
-
-}
-
-void BLT_Handle()
-{
-
-}
-
-void BGE_Handle()
-{
-
-}
-
-void LW_Handle()
-{
-
-}
-
-void LH_Handle()
-{
-
-}
-
-void LHU_Handle()
-{
-
-}
-
-void LB_Handle()
-{
-
-}
-
-void LBU_Handle()
-{
-
-}
-
-void SW_Handle()
-{
-
-}
-
-void SH_Handle()
-{
-
-}
-
-void SB_Handle()
+//Store Instructions Handler
+void SI_Handle()
 {
 
 }
