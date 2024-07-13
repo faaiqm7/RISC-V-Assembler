@@ -21,7 +21,7 @@ void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray);
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][32], int* labels_mem_address_input);
-int check_label_exists(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input);
+int check_label_exists(char buffer_instruction_input[BUFFER_SIZE]);
 
 int main(void) {
 
@@ -31,6 +31,7 @@ int main(void) {
     int current_line = 1;
     int dec_instruct_address = 0;
     char buffer[BUFFER_SIZE];
+    char prev_buffer[BUFFER_SIZE];
     char buffer_instruction[5];
 
     /*/////////////////////
@@ -55,10 +56,10 @@ int main(void) {
     char labels[file_length][32]; //labels shall not be more than 32 characters in size including ':' and '.' 
     int labels_mem_address[file_length];
 
-    //ITERATE THROUGH THE ENTIRE FILE AND CAPTURE THE MEMORY ADDRESS OF ALL LABELS (FOR JUMPS)
+    //ITERATE THROUGH THE ENTIRE FILE AND CAPTURE THE MEMORY ADDRESS OF ALL LABELS (FOR JUMPS) [PASS 1]
     save_labels_address(file_length, ASM_File_Name, labels, &labels_mem_address);
 
-    if(file_length > 0)
+    if(file_length > 0) //[PASS 2]
     {
         ASM_File = fopen(ASM_File_Name, "r");
         Machine_File = fopen(Machine_File_Name, "w");
@@ -95,33 +96,60 @@ int main(void) {
             //Control Transfer Instructions (J-Type Instructions)
             else if(strcmp(buffer_instruction, "JAL") == 0 || strcmp(buffer_instruction, "JALR") == 0)
             {
-                
+
             }
             //Conditional Branches (B-Type Instructions)
             else if(strcmp(buffer_instruction, "BEQ") == 0 || strcmp(buffer_instruction, "BNE") == 0 ||
                     strcmp(buffer_instruction, "BLT") == 0 || strcmp(buffer_instruction, "BGE") == 0) 
             {
-                
+
             }
             //Load Instructions (I-Type Instructions)
             else if(strcmp(buffer_instruction, "LW") == 0 || strcmp(buffer_instruction, "LH") == 0 || strcmp(buffer_instruction, "LHU") == 0 ||
                     strcmp(buffer_instruction, "LB") == 0 || strcmp(buffer_instruction, "LBU") == 0)
             {
-                
+
             }
             //Store Instructions (S-Type Instructions)
             else if(strcmp(buffer_instruction, "SW") == 0 || strcmp(buffer_instruction, "SH") == 0 || strcmp(buffer_instruction, "SB") == 0 )
             {
-                
+
             }
-            else if(check_label_exists(file_length, buffer,labels, &labels_mem_address) == 0)
+            else if(check_label_exists(buffer) == 0)
             {
                 printf("ERROR: Unrecognized instruction at LINE %d\n", current_line);
                 break;
             }
+
+            //now for calculating memory address of instruction
+
+            if(current_line > 1 && check_label_exists(buffer) == 1 && check_label_exists(prev_buffer) == 0)
+            {
+                //add 4 to memory address if previous line isn't a label but current line is
+                //Ex.   ADD R3, #4
+                ///   start:
+                dec_instruct_address += 4;
+            }
+            else if(current_line > 1 && check_label_exists(buffer) == 1 && check_label_exists(prev_buffer) == 1)
+            {
+                //don't add to memory address if current line and previous line are labels
+                //Ex. start1:
+                //    start2:
+            }
+            else if(current_line > 1 && check_label_exists(buffer) == 0 && check_label_exists(prev_buffer) == 1)
+            {
+                //don't add to memory address if current line is not a label but previous line is
+                //Ex. start1:
+                //      ADD R3, #4
+            }
+            else if(current_line > 1 && check_label_exists(buffer) == 0 && check_label_exists(prev_buffer) == 0)
+            {
+                //if previous line and current line are not labels then increment memory address (it is instructions)
+                dec_instruct_address += 4;
+            }
             printf("@%.4d %s\n", dec_instruct_address, buffer);
+            strcpy(prev_buffer,buffer);
             current_line++;
-            dec_instruct_address += 4;
         }
     }
 
@@ -165,12 +193,13 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
     char buffer[BUFFER_SIZE];
     char prev_buffer[BUFFER_SIZE];
     int index = 0;
+    int mem_address = 0;
     while(current_line <= file_length_input)
     {
         fgets(buffer, BUFFER_SIZE, ASM_File_Input);
         if(strstr(buffer,":") != NULL)
         {
-            if(current_line > 0)
+            if(current_line > 1)
             {
                 //checks if previous line is also a label (therefore memory address is the same)
                 if(strstr(prev_buffer, ":") != NULL)
@@ -179,7 +208,7 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
                 }
                 else
                 {
-                    labels_mem_address_input[index] = (current_line-1)*4;
+                    labels_mem_address_input[index] = mem_address += 4;
                 }
                 int i = 0;
                 while(buffer[i] != NULL)
@@ -194,7 +223,16 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
                 strcpy(labels_input[0],buffer);
                 labels_mem_address_input[0] = 0;
             }
+            printf("%d\n", labels_mem_address_input[index]);
             index++;
+        }
+        else if(current_line > 1)
+        {
+            //if previous line and current line do not have a label then add 4 to mem address
+            if(strstr(prev_buffer, ":") == NULL)
+            {
+                mem_address += 4;
+            }
         }
         strcpy(prev_buffer,buffer);
         current_line++;
@@ -204,17 +242,21 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
 }
 
 //if label exists then return 1 else return 0
-int check_label_exists(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input)
+int check_label_exists(char buffer_instruction_input[BUFFER_SIZE])
 {
-    for(int i = 0; i < file_length_input; i++)
+    if(strstr(buffer_instruction_input, ":") != NULL)
     {
-        if(strstr(buffer_instruction_input, labels_input[i]) != NULL)
-        {
-            return 1;
-        }
+        return 1;
     }
     return 0;
 }
+
+//returns the memory address of a label
+int return_labels_memory_address()
+{
+
+}
+
 //Integer Register-Immediate Instructions Handler
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5])
 {
