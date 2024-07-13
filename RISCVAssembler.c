@@ -20,8 +20,9 @@ int file_number_lines(char asm_file_input_name[32]);
 void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray);
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
-void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][32], int* labels_mem_address_input);
+void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][64], int* labels_mem_address_input, int* input_num_labels);
 int check_label_exists(char buffer_instruction_input[BUFFER_SIZE]);
+int return_labels_memory_address(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][64], int* labels_mem_address_input, int* number_of_labels);
 
 int main(void) {
 
@@ -53,11 +54,12 @@ int main(void) {
     file_length = file_number_lines(ASM_File_Name);
 
     
-    char labels[file_length][32]; //labels shall not be more than 32 characters in size including ':' and '.' 
+    char labels[file_length][64]; //labels shall not be more than 32 characters in size including ':' and '.' 
     int labels_mem_address[file_length];
+    int* number_of_labels;
 
     //ITERATE THROUGH THE ENTIRE FILE AND CAPTURE THE MEMORY ADDRESS OF ALL LABELS (FOR JUMPS) [PASS 1]
-    save_labels_address(file_length, ASM_File_Name, labels, &labels_mem_address);
+    save_labels_address(file_length, ASM_File_Name, labels, &labels_mem_address, &number_of_labels);
 
     if(file_length > 0) //[PASS 2]
     {
@@ -185,7 +187,7 @@ void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray)
     }
 }
 
-void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][32], int* labels_mem_address_input)
+void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][64], int* labels_mem_address_input, int* input_num_labels)
 {
     FILE *ASM_File_Input; 
     ASM_File_Input = fopen(asm_file_input_name, "r");
@@ -199,6 +201,7 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
         fgets(buffer, BUFFER_SIZE, ASM_File_Input);
         if(strstr(buffer,":") != NULL)
         {
+            *input_num_labels += 1;
             if(current_line > 1)
             {
                 //checks if previous line is also a label (therefore memory address is the same)
@@ -208,22 +211,23 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
                 }
                 else
                 {
-                    labels_mem_address_input[index] = mem_address += 4;
+                    mem_address += 4;
+                    labels_mem_address_input[index] = mem_address;
                 }
                 int i = 0;
                 while(buffer[i] != NULL)
                 {
                     i++;
                 }
-                strcpy(labels_input[0] + 32*index,buffer);
-                strcpy(labels_input[0] + 32*index + (i - 1), "\0");
+                strcpy(labels_input[0] + 64*index,buffer);
+                //strcpy(labels_input[0] + 64*index + (i - 1), "\0");
             }
             else
             {
                 strcpy(labels_input[0],buffer);
                 labels_mem_address_input[0] = 0;
             }
-            printf("%d\n", labels_mem_address_input[index]);
+            //printf("%d\n", labels_mem_address_input[index]);
             index++;
         }
         else if(current_line > 1)
@@ -252,9 +256,17 @@ int check_label_exists(char buffer_instruction_input[BUFFER_SIZE])
 }
 
 //returns the memory address of a label
-int return_labels_memory_address()
+int return_labels_memory_address(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][64], int* labels_mem_address_input, int* number_of_labels)
 {
-
+    for(int i = 0; i < *number_of_labels; i++)
+    {
+        if(strstr(labels_input[i],buffer_instruction_input) != NULL)
+        {
+            return labels_mem_address_input[i];
+        }
+    }
+    printf("ERROR: Segmentation Fault, Label Does Not Exist\n");
+    return -1;
 }
 
 //Integer Register-Immediate Instructions Handler
@@ -293,7 +305,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             //Input RS1 (BITS [19:15])
             int rs1[5];
             char rs1_string[3];
-            strncpy(rs1_string,strstr(buffer_instruction_input, ",R") + 2, 2);
+            strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
             strcat(rs1_string, "\0");
             dec_To_Binary(atoi(rs1_string), &rs1, 5);
             startingIndex = 0;
@@ -319,7 +331,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             //Input RD (BITS [11:7])
             int rd[5];
             char rd_string[3];
-            strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
+            strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
             strcat(rd_string, "\0");
             dec_To_Binary(atoi(rd_string), &rd, 5);
             startingIndex = 0;
@@ -693,7 +705,7 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     //Input RS2 (BITS [24:20])
     int rs2[5];
     char rs2_string[3];
-    strncpy(rs2_string,strstr(buffer_instruction_input, ",R") + 2, 2);
+    strncpy(rs2_string,strstr(buffer_instruction_input, ",x") + 2, 2);
     strcat(rs2_string, "\0");
     dec_To_Binary(atoi(rs2_string), &rs2, 5);
     for(int i = 0; i < 5 - 1; i++)
@@ -718,7 +730,7 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     //Input RS1 (BITS [19:15])
     int rs1[5];
     char rs1_string[3];
-    strncpy(rs1_string,strstr(buffer_instruction_input, ",R") + 2, 2);
+    strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
     strcat(rs1_string, "\0");
     dec_To_Binary(atoi(rs1_string), &rs1, 5);
     for(int i = 0; i < 5 - 1; i++)
@@ -743,7 +755,7 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     //Input RD (BITS [11:7])
     int rd[5];
     char rd_string[3];
-    strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
+    strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
     strcat(rd_string, "\0");
     dec_To_Binary(atoi(rd_string), &rd, 5);
     startingIndex = 0;
@@ -946,7 +958,7 @@ void CTI_Handle()
 {
     //Ex. JAL Rd,#imm
     //Ex. JALR
-
+    //return_labels_memory_address(file_length, buffer, labels, &labels_mem_address, &number_of_labels);
 }
 
 //Conditional Branches Instructions Handler
