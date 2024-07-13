@@ -2,8 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define BUFFER_SIZE 65536
+#define BUFFER_SIZE 64
 
+
+//MAX NUMBERS OF LINES = 2^31 lines
 /*RISC-V Instructions*/
 char IRII[36][5] = {"ADDI", "ANDI","ORI","XORI","SLTI","NOP",
                     "SLLI","SRLI","SRAI","LUI","AUIPC","ADD",
@@ -12,10 +14,14 @@ char IRII[36][5] = {"ADDI", "ANDI","ORI","XORI","SLTI","NOP",
                     "BNE","BLT","BGE","LW","LH","LHU",
                     "LB","LBU","SW","SH","SB"};
 
+
 //Headers
 int file_number_lines(char asm_file_input_name[32]);
 void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray);
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
+void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
+void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][32], int* labels_mem_address_input);
+int check_label_exists(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input);
 
 int main(void) {
 
@@ -23,6 +29,7 @@ int main(void) {
     char Machine_File_Name[48] = "";
     int file_length;
     int current_line = 1;
+    int dec_instruct_address = 0;
     char buffer[BUFFER_SIZE];
     char buffer_instruction[5];
 
@@ -44,15 +51,29 @@ int main(void) {
     fclose(ASM_File); //Confirmed file exists (Will now open only when needed)
     file_length = file_number_lines(ASM_File_Name);
 
+    
+    char labels[file_length][32]; //labels shall not be more than 32 characters in size including ':' and '.' 
+    int labels_mem_address[file_length];
+
+    //ITERATE THROUGH THE ENTIRE FILE AND CAPTURE THE MEMORY ADDRESS OF ALL LABELS (FOR JUMPS)
+    save_labels_address(file_length, ASM_File_Name, labels, &labels_mem_address);
+
     if(file_length > 0)
     {
         ASM_File = fopen(ASM_File_Name, "r");
         Machine_File = fopen(Machine_File_Name, "w");
+        
         while(current_line <= file_length)
         {   
             //Detect instruction
             fgets(buffer, BUFFER_SIZE, ASM_File);
-            strncpy(buffer_instruction, buffer, 4);
+
+            int k = 0;
+            while(strncmp(buffer + k, " ", 1) == 0)
+            {
+                k++;
+            }
+            strncpy(buffer_instruction, buffer + k, 4);
             strcat(buffer_instruction, "\0");
             
             //IRII (I-Type Instructions)
@@ -69,7 +90,7 @@ int main(void) {
                     strcmp(buffer_instruction, "SLL") == 0 || strcmp(buffer_instruction, "SRL") == 0 || strcmp(buffer_instruction, "SUB") == 0 ||
                     strcmp(buffer_instruction, "SRA") == 0)
             {
-                
+                IRRI_Handle(buffer, Machine_File, buffer_instruction);
             }
             //Control Transfer Instructions (J-Type Instructions)
             else if(strcmp(buffer_instruction, "JAL") == 0 || strcmp(buffer_instruction, "JALR") == 0)
@@ -93,13 +114,14 @@ int main(void) {
             {
                 
             }
-            else
+            else if(check_label_exists(file_length, buffer,labels, &labels_mem_address) == 0)
             {
                 printf("ERROR: Unrecognized instruction at LINE %d\n", current_line);
                 break;
             }
+            printf("@%.4d %s\n", dec_instruct_address, buffer);
             current_line++;
-            
+            dec_instruct_address += 4;
         }
     }
 
@@ -135,6 +157,64 @@ void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray)
     }
 }
 
+void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][32], int* labels_mem_address_input)
+{
+    FILE *ASM_File_Input; 
+    ASM_File_Input = fopen(asm_file_input_name, "r");
+    int current_line = 1;
+    char buffer[BUFFER_SIZE];
+    char prev_buffer[BUFFER_SIZE];
+    int index = 0;
+    while(current_line <= file_length_input)
+    {
+        fgets(buffer, BUFFER_SIZE, ASM_File_Input);
+        if(strstr(buffer,":") != NULL)
+        {
+            if(current_line > 0)
+            {
+                //checks if previous line is also a label (therefore memory address is the same)
+                if(strstr(prev_buffer, ":") != NULL)
+                {
+                    labels_mem_address_input[index] = labels_mem_address_input[index - 1];
+                }
+                else
+                {
+                    labels_mem_address_input[index] = (current_line-1)*4;
+                }
+                int i = 0;
+                while(buffer[i] != NULL)
+                {
+                    i++;
+                }
+                strcpy(labels_input[0] + 32*index,buffer);
+                strcpy(labels_input[0] + 32*index + (i - 1), "\0");
+            }
+            else
+            {
+                strcpy(labels_input[0],buffer);
+                labels_mem_address_input[0] = 0;
+            }
+            index++;
+        }
+        strcpy(prev_buffer,buffer);
+        current_line++;
+    }
+
+    fclose(ASM_File_Input);
+}
+
+//if label exists then return 1 else return 0
+int check_label_exists(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input)
+{
+    for(int i = 0; i < file_length_input; i++)
+    {
+        if(strstr(buffer_instruction_input, labels_input[i]) != NULL)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
 //Integer Register-Immediate Instructions Handler
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5])
 {
@@ -815,8 +895,8 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     }
     
     //New Line Character (not related)
-    buffer_machine[32] = '\n';
-    fputs(buffer_machine, MACHINE_File_Input); 
+    buffer_machine[32] = '\0';
+    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
 }
 
 //Control Transfer Instructions Handler
