@@ -919,12 +919,17 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
                 printf("\nERROR: Jump Label (JAL) exceeds allowed amount\n");
             }
         }
-
-        for(int i = 0; i < 20; i++)
+        
+        buffer_machine[0] = imm[0] +'0';
+        for(int i = 0; i < 10; i++)
         {
-            buffer_machine[i] = imm[i] +'0';
-        }   
-        //printf("\n");
+            buffer_machine[1 + i] = imm[10 + i] +'0';
+        }
+        buffer_machine[11] = imm[9] +'0';
+        for(int i = 0; i < 8; i++)
+        {
+            buffer_machine[12 + i] = imm[1 + i] +'0';
+        }
  
         //Input opcode (BITS [6:0])
         buffer_machine[25] = '1';
