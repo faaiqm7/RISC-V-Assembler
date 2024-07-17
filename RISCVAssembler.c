@@ -180,11 +180,22 @@ void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray)
     int current_dec = dec_input;
     int decimal_place = 0;
     int output = 0;
-    while(current_dec > 0)
+    int x = sizeOfArray;
+    while(current_dec > 0 || x > 0)
     {
-        *(binary_output + (sizeOfArray - 1) - decimal_place) = (current_dec % 2);
-        current_dec /= 2;
-        decimal_place++;
+        if(current_dec > 0)
+        {
+            *(binary_output + (sizeOfArray - 1) - decimal_place) = (current_dec % 2);
+            current_dec /= 2;
+            decimal_place++;
+            x--;
+        }
+        else
+        {
+            *(binary_output + (sizeOfArray - 1) - decimal_place) = 0;
+            decimal_place++;
+            x--;
+        }
     }
 }
 
@@ -274,7 +285,6 @@ int return_labels_memory_address(int file_length_input, char buffer_instruction_
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
     char buffer_machine[33];
-    int startingIndex = 0;
     if(strncmp(instruction_header,"ADDI", 4) == 0 || strncmp(instruction_header,"ANDI", 4) == 0 || strncmp(instruction_header,"ORI", 3) == 0 || strncmp(instruction_header,"XORI", 4) == 0 || 
        strncmp(instruction_header,"SLTI", 4) == 0)
        {
@@ -284,23 +294,9 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 4);
             strcat(imm_string, "\0");
             dec_To_Binary(atoi(imm_string), &imm, 12);
-            for(int i = 0; i < 12 - 1; i++)
-            {
-                if(imm[i] > 1)
-                {
-                    startingIndex = i + 1;
-                }
-            }
             for(int i = 0; i < 12; i++)
             {
-                if(i >= startingIndex)
-                {
-                    buffer_machine[i] = imm[i] +'0';
-                }
-                else
-                {
-                    buffer_machine[i] = '0';
-                }
+                buffer_machine[i] = imm[i] +'0';
             }
 
             //Input RS1 (BITS [19:15])
@@ -309,24 +305,11 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
             strcat(rs1_string, "\0");
             dec_To_Binary(atoi(rs1_string), &rs1, 5);
-            startingIndex = 0;
-            for(int i = 0; i < 5 - 1; i++)
-            {
-                if(rs1[i] > 1)
-                {
-                    startingIndex = i + 1;
-                }
-            }
+
             for(int i = 0; i < 5; i++)
             {
-                if(i >= startingIndex)
-                {
-                    buffer_machine[i + 12] = rs1[i] +'0';
-                }
-                else
-                {
-                    buffer_machine[i + 12] = '0';
-                }
+
+                buffer_machine[i + 12] = rs1[i] +'0';
             }
 
             //Input RD (BITS [11:7])
@@ -335,24 +318,9 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
             strcat(rd_string, "\0");
             dec_To_Binary(atoi(rd_string), &rd, 5);
-            startingIndex = 0;
-            for(int i = 0; i < 5 - 1; i++)
-            {
-                if(rd[i] > 1)
-                {
-                    startingIndex = i + 1;
-                }
-            }
             for(int i = 0; i < 5; i++)
             {
-                if(i >= startingIndex)
-                {
-                    buffer_machine[20 + i] = rd[i] +'0';
-                }
-                else
-                {
-                    buffer_machine[20 + i] = '0';
-                }
+                buffer_machine[20 + i] = rd[i] +'0';
             }
 
             if(strncmp(instruction_header,"ADDI", 4) == 0)
@@ -476,24 +444,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 2);
         strcat(imm_string, "\0");
         dec_To_Binary(atoi(imm_string), &imm, 5);
-        int startingIndex = 0;
-        for(int i = 0; i < 5 - 1; i++)
-        {
-            if(imm[i] > 1)
-            {
-                startingIndex = i + 1;
-            }
-        }
         for(int i = 0; i < 5; i++)
         {
-            if(i >= startingIndex)
-            {
-                buffer_machine[i + 7] = imm[i] +'0';
-            }
-            else
-            {
-                buffer_machine[i + 7] = '0';
-            }
+
+            buffer_machine[i + 7] = imm[i] +'0';
         }
 
         //Input RS1 (BITS [19:15])
@@ -502,24 +456,9 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             strncpy(rs1_string,strstr(buffer_instruction_input, ",R") + 2, 2);
             strcat(rs1_string, "\0");
             dec_To_Binary(atoi(rs1_string), &rs1, 5);
-            startingIndex = 0;
-            for(int i = 0; i < 5 - 1; i++)
-            {
-                if(rs1[i] > 1)
-                {
-                    startingIndex = i + 1;
-                }
-            }
             for(int i = 0; i < 5; i++)
             {
-                if(i >= startingIndex)
-                {
-                    buffer_machine[i + 12] = rs1[i] +'0';
-                }
-                else
-                {
-                    buffer_machine[i + 12] = '0';
-                }
+                buffer_machine[i + 12] = rs1[i] +'0';
             }
 
             //Input RD (BITS [11:7])
@@ -528,24 +467,9 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
             strcat(rd_string, "\0");
             dec_To_Binary(atoi(rd_string), &rd, 5);
-            startingIndex = 0;
-            for(int i = 0; i < 5 - 1; i++)
-            {
-                if(rd[i] > 1)
-                {
-                    startingIndex = i + 1;
-                }
-            }
             for(int i = 0; i < 5; i++)
             {
-                if(i >= startingIndex)
-                {
-                    buffer_machine[20 + i] = rd[i] +'0';
-                }
-                else
-                {
-                    buffer_machine[20 + i] = '0';
-                }
+                buffer_machine[20 + i] = rd[i] +'0';
             }
 
             //imm[11:5] BITS[31:25]
@@ -617,78 +541,51 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         //Ex. AUIPC R5,#imm
 
         //Input Imm[19:0] (BITS [31:12])
-            int imm[20];
-            char imm_string[8];
-            strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 7);
-            strcat(imm_string, "\0");
-            dec_To_Binary(atoi(imm_string), &imm, 12);
-            int startingIndex = 0;
-            for(int i = 0; i < 20 - 1; i++)
-            {
-                if(imm[i] > 1)
-                {
-                    startingIndex = i + 1;
-                }
-            }
-            for(int i = 0; i < 20; i++)
-            {
-                if(i >= startingIndex)
-                {
-                    buffer_machine[i] = imm[i] +'0';
-                }
-                else
-                {
-                    buffer_machine[i] = '0';
-                }
-            }
-        //Input RD (BITS [11:7])
-            int rd[5];
-            char rd_string[3];
-            strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
-            strcat(rd_string, "\0");
-            dec_To_Binary(atoi(rd_string), &rd, 5);
-            startingIndex = 0;
-            for(int i = 0; i < 5 - 1; i++)
-            {
-                if(rd[i] > 1)
-                {
-                    startingIndex = i + 1;
-                }
-            }
-            for(int i = 0; i < 5; i++)
-            {
-                if(i >= startingIndex)
-                {
-                    buffer_machine[20 + i] = rd[i] +'0';
-                }
-                else
-                {
-                    buffer_machine[20 + i] = '0';
-                }
-            }
+        int imm[20];
+        char imm_string[8];
+        strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 7);
+        strcat(imm_string, "\0");
+        dec_To_Binary(atoi(imm_string), &imm, 12);
+        for(int i = 0; i < 20; i++)
+        {
 
-            if(strncmp(instruction_header, "LUI", 3) == 0)
-            {
-                //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '1';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '1';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
-            }
-            else if(strncmp(instruction_header, "AUIPC", 5) == 0)
-            {
-                //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '1';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
-            }
+            buffer_machine[i] = imm[i] +'0';
+        }
+
+        //Input RD (BITS [11:7])
+        int rd[5];
+        char rd_string[3];
+        strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
+        strcat(rd_string, "\0");
+        dec_To_Binary(atoi(rd_string), &rd, 5);
+
+        for(int i = 0; i < 5; i++)
+        {
+            buffer_machine[20 + i] = rd[i] +'0';
+        }
+
+        if(strncmp(instruction_header, "LUI", 3) == 0)
+        {
+            //Input opcode (BITS [6:0])
+            buffer_machine[25] = '0';
+            buffer_machine[26] = '1';
+            buffer_machine[27] = '1';
+            buffer_machine[28] = '0';
+            buffer_machine[29] = '1';
+            buffer_machine[30] = '1';
+            buffer_machine[31] = '1';
+        }
+        else if(strncmp(instruction_header, "AUIPC", 5) == 0)
+        {
+            //Input opcode (BITS [6:0])
+            buffer_machine[25] = '0';
+            buffer_machine[26] = '0';
+            buffer_machine[27] = '1';
+            buffer_machine[28] = '0';
+            buffer_machine[29] = '1';
+            buffer_machine[30] = '1';
+            buffer_machine[31] = '1';
+        }
 
     }
 
@@ -701,7 +598,6 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
 void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
     char buffer_machine[33];
-    int startingIndex = 0;
 
     //Input RS2 (BITS [24:20])
     int rs2[5];
@@ -709,23 +605,9 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     strncpy(rs2_string,strstr(buffer_instruction_input, ",x") + 2, 2);
     strcat(rs2_string, "\0");
     dec_To_Binary(atoi(rs2_string), &rs2, 5);
-    for(int i = 0; i < 5 - 1; i++)
-    {
-        if(rs2[i] > 1)
-        {
-            startingIndex = i + 1;
-        }
-    }
     for(int i = 0; i < 5; i++)
     {
-        if(i >= startingIndex)
-        {
-            buffer_machine[i + 7] = rs2[i] +'0';
-        }
-        else
-        {
-            buffer_machine[i + 7] = '0';
-        }
+        buffer_machine[i + 7] = rs2[i] +'0';
     }
 
     //Input RS1 (BITS [19:15])
@@ -734,23 +616,9 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
     strcat(rs1_string, "\0");
     dec_To_Binary(atoi(rs1_string), &rs1, 5);
-    for(int i = 0; i < 5 - 1; i++)
-    {
-        if(rs1[i] > 1)
-        {
-            startingIndex = i + 1;
-        }
-    }
     for(int i = 0; i < 5; i++)
     {
-        if(i >= startingIndex)
-        {
-            buffer_machine[i + 12] = rs1[i] +'0';
-        }
-        else
-        {
-            buffer_machine[i + 12] = '0';
-        }
+        buffer_machine[i + 12] = rs1[i] +'0';
     }
 
     //Input RD (BITS [11:7])
@@ -759,24 +627,9 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
     strcat(rd_string, "\0");
     dec_To_Binary(atoi(rd_string), &rd, 5);
-    startingIndex = 0;
-    for(int i = 0; i < 5 - 1; i++)
-    {
-        if(rd[i] > 1)
-        {
-            startingIndex = i + 1;
-        }
-    }
     for(int i = 0; i < 5; i++)
     {
-        if(i >= startingIndex)
-        {
-            buffer_machine[20 + i] = rd[i] +'0';
-        }
-        else
-        {
-            buffer_machine[20 + i] = '0';
-        }
+        buffer_machine[20 + i] = rd[i] +'0';
     }
 
      //Input opcode (BITS [6:0])
@@ -968,7 +821,6 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
 
     char buffer_machine[33];
     char label_input_instruct[32];
-    int startingIndex = 0;
 
     if(strncmp(instruction_header,"JALR", 4) == 0 )
     {
@@ -1003,24 +855,9 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
                 printf("\nERROR: Jump from label (JALR) exceeds allowed amount\n");
             }
         }
-
-        for(int i = 0; i < 12 - 1; i++)
-        {
-            if(imm[i] > 1)
-            {
-                startingIndex = i + 1;
-            }
-        }
         for(int i = 0; i < 12; i++)
         {
-            if(i >= startingIndex)
-            {
-                buffer_machine[i] = imm[i] +'0';
-            }
-            else
-            {
-                buffer_machine[i] = '0';
-            }
+            buffer_machine[i] = imm[i] +'0';
         } 
 
         //Input RS1 (BITS [19:15])
@@ -1029,24 +866,9 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
         strcat(rs1_string, "\0");
         dec_To_Binary(atoi(rs1_string), &rs1, 5);
-        startingIndex = 0;
-        for(int i = 0; i < 5 - 1; i++)
-        {
-            if(rs1[i] > 1)
-            {
-                startingIndex = i + 1;
-            }
-        }
         for(int i = 0; i < 5; i++)
         {
-            if(i >= startingIndex)
-            {
-                buffer_machine[i + 12] = rs1[i] +'0';
-            }
-            else
-            {
-                buffer_machine[i + 12] = '0';
-            }
+            buffer_machine[i + 12] = rs1[i] +'0';
         }
 
         //Input funct3 (BITS [14:12])
@@ -1074,6 +896,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         if(strstr(buffer_instruction_input, "#") != NULL)
         {
             //We are dealing with a number address
+            strcpy(imm_string, strstr(buffer_instruction_input, "#") + 1);
             strcat(imm_string, "\0");
             if(atoi(imm_string) <= 1048576)
             {
@@ -1097,24 +920,11 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
             }
         }
 
-        for(int i = 0; i < 20 - 1; i++)
-        {
-            if(imm[i] > 1)
-            {
-                startingIndex = i + 1;
-            }
-        }
         for(int i = 0; i < 20; i++)
         {
-            if(i >= startingIndex)
-            {
-                buffer_machine[i] = imm[i] +'0';
-            }
-            else
-            {
-                buffer_machine[i] = '0';
-            }
+            buffer_machine[i] = imm[i] +'0';
         }   
+        //printf("\n");
  
         //Input opcode (BITS [6:0])
         buffer_machine[25] = '1';
@@ -1133,24 +943,9 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
         strcat(rd_string, "\0");
         dec_To_Binary(atoi(rd_string), &rd, 5);
-        startingIndex = 0;
-        for(int i = 0; i < 5 - 1; i++)
-        {
-            if(rd[i] > 1)
-            {
-                startingIndex = i + 1;
-            }
-        }
         for(int i = 0; i < 5; i++)
         {
-            if(i >= startingIndex)
-            {
-                buffer_machine[20 + i] = rd[i] +'0';
-            }
-            else
-            {
-                buffer_machine[20 + i] = '0';
-            }
+            buffer_machine[20 + i] = rd[i] +'0';
         }
 
     //New Line Character (not related)
