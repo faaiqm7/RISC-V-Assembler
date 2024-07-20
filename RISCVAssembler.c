@@ -24,7 +24,7 @@ int return_labels_memory_address(int file_length_input, char buffer_instruction_
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels);
-
+void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels);
 
 int main(void) {
 
@@ -813,14 +813,12 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     // Ex. JALR x7, 4(x1)
     //Jump to x1 + 4 and save PC + 4 to x7
 
-    //return_labels_memory_address(file_length, buffer, labels, &labels_mem_address, &number_of_labels);
-
     char buffer_machine[33];
     char label_input_instruct[32];
 
     if(strncmp(instruction_header,"JALR", 4) == 0 )
     {
-         //Input Imm[11:0] (BITS [31:20])
+        //Input Imm[11:0] (BITS [31:20])
         int imm[12];
         char imm_string[5];
         if(strstr(buffer_instruction_input, "#") != NULL)
@@ -839,12 +837,22 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         }
         else
         {
-            strcpy(label_input_instruct,strstr(strstr(buffer_instruction_input, ',') + 1, ','));
+            //appending a ':' to the end of the search label to find the label later on
+            int j = 0;
+            strncpy(label_input_instruct,strchr(buffer_instruction_input, ',') + 1, 32);
+            while(label_input_instruct[j] != NULL)
+            {
+                j++;
+            }
+            char label_modified[j + 1];
+            label_modified[j-1] = ':';
+            label_modified[j] = '\0';
+            strncpy(label_modified, label_input_instruct, j-1);
 
             //Convert a label to a memory address
-            if(return_labels_memory_address(file_length_input, label_input_instruct, labels_input, &labels_mem_address_input, &number_of_labels) <= 4096)
+            if(return_labels_memory_address(file_length_input, label_modified, labels_input, &labels_mem_address_input, &number_of_labels) <= 4096)
             {
-                dec_To_Binary(return_labels_memory_address(file_length_input, label_input_instruct, labels_input, &labels_mem_address_input, &number_of_labels), &imm, 12);
+                dec_To_Binary(return_labels_memory_address(file_length_input, label_modified, labels_input, &labels_mem_address_input, &number_of_labels), &imm, 12);
             } 
             else
             {
@@ -966,9 +974,138 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
 }
 
 //Conditional Branches Instructions Handler
-void CBI_Handle()
+void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels)
 {
+    //Ex. BEQ x7,x6, #imm <-can also be a label
+    //Jump to #imm if x7 == x6
+    //Ex. BNQ x7,x6, #imm <-can also be a label
+    //Jump to #imm if x7 != x6
+    //Ex. BLT x7,x6, #imm <-can also be a label
+    //Jump to #imm if x7 < x6
+    //Ex. BGE x7,x6, #imm <-can also be a label
+    //Jump to #imm if x7 >= x6
 
+    //where x7 = rs1 and x6 = rs2
+
+    char buffer_machine[33];
+    char label_input_instruct[32];
+
+    //Input RS1 (BITS [19:15])
+    int rs1[5];
+    char rs1_string[3];
+    strncpy(rs1_string,strstr(buffer_instruction_input, " x") + 2, 2);
+    strcat(rs1_string, "\0");
+    dec_To_Binary(atoi(rs1_string), &rs1, 5);
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[12 + i] = rs1[i] +'0';
+    }
+
+    //Input RS2 (BITS [24:20])
+    int rs2[5];
+    char rs2_string[3];
+    strncpy(rs2_string,strstr(buffer_instruction_input, ",x") + 2, 2);
+    strcat(rs2_string, "\0");
+    dec_To_Binary(atoi(rs2_string), &rs2, 5);
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[7 + i] = rs2[i] +'0';
+    }
+
+    //Input opcode (BITS [6:0])
+    buffer_machine[25] = '1';
+    buffer_machine[26] = '1';
+    buffer_machine[27] = '0';
+    buffer_machine[28] = '0';
+    buffer_machine[29] = '0';
+    buffer_machine[30] = '1';
+    buffer_machine[31] = '1';
+
+    //Input Imm[11:0]
+    int imm[12];
+    char imm_string[5];
+    if(strstr(buffer_instruction_input, "#") != NULL)
+    {
+        //We are dealing with a number address
+        strcpy(imm_string, strstr(buffer_instruction_input, "#") + 1);
+        strcat(imm_string, "\0");
+        if(atoi(imm_string) <= 4096)
+        {
+            dec_To_Binary(atoi(imm_string), &imm, 12);
+        }
+        else
+        {
+            printf("\nERROR: Jump (JAL) exceeds allowed amount\n");
+        }
+    }
+    else
+    {
+        //appending a ':' to the end of the search label to find the label later on
+        int j = 0;
+        strncpy(label_input_instruct,strchr(buffer_instruction_input, ',') + 1, 32);
+        while(label_input_instruct[j] != NULL)
+        {
+            j++;
+        }
+        char label_modified[j + 1];
+        label_modified[j-1] = ':';
+        label_modified[j] = '\0';
+        strncpy(label_modified, label_input_instruct, j-1);
+
+        //Convert a label to a memory address
+        if(return_labels_memory_address(file_length_input, label_modified, labels_input, labels_mem_address_input, number_of_labels) <= 4096)
+        {
+            dec_To_Binary(return_labels_memory_address(file_length_input, label_modified, labels_input, labels_mem_address_input, number_of_labels), &imm, 12); 
+        }
+        else
+        {
+            printf("\nERROR: Jump Label (JAL) exceeds allowed amount\n");
+        }
+    }
+    
+    buffer_machine[0] = imm[0] +'0';
+    for(int i = 0; i < 6; i++)
+    {
+        buffer_machine[1 + i] = imm[2 + i] +'0';
+    }
+    for(int i = 0; i < 4; i++)
+    {
+        buffer_machine[20 + i] = imm[1 + i] +'0';
+    }
+    buffer_machine[24] = imm[1] +'0';
+
+    if(strncmp(instruction_header,"BEQ", 3) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }
+    else if(strncmp(instruction_header,"BNE", 3) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+    else if(strncmp(instruction_header,"BLT", 3) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }
+    else if(strncmp(instruction_header,"BGE", 3) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+
+    //New Line Character (not related)
+    buffer_machine[32] = '\0';
+    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
 }
 
 //Load Instructions Handler
