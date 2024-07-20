@@ -150,7 +150,7 @@ int main(void) {
                 //if previous line and current line are not labels then increment memory address (it is instructions)
                 dec_instruct_address += 4;
             }
-            printf("@%.4d %s\n", dec_instruct_address, buffer);
+            //printf("@%.4d %s\n", dec_instruct_address, buffer);
             strcpy(prev_buffer,buffer);
             current_line++;
         }
@@ -208,6 +208,7 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
     char prev_buffer[BUFFER_SIZE];
     int index = 0;
     int mem_address = 0;
+    *input_num_labels = 0;
     while(current_line <= file_length_input)
     {
         fgets(buffer, BUFFER_SIZE, ASM_File_Input);
@@ -226,11 +227,6 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
                     mem_address += 4;
                     labels_mem_address_input[index] = mem_address;
                 }
-                int i = 0;
-                while(buffer[i] != NULL)
-                {
-                    i++;
-                }
                 strcpy(labels_input[0] + 64*index,buffer);
                 //strcpy(labels_input[0] + 64*index + (i - 1), "\0");
             }
@@ -239,7 +235,7 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
                 strcpy(labels_input[0],buffer);
                 labels_mem_address_input[0] = 0;
             }
-            //printf("%d\n", labels_mem_address_input[index]);
+            //printf("INDEX:%d %d\n", index, labels_mem_address_input[index]);
             index++;
         }
         else if(current_line > 1)
@@ -253,7 +249,6 @@ void save_labels_address(int file_length_input, char asm_file_input_name[32], ch
         strcpy(prev_buffer,buffer);
         current_line++;
     }
-
     fclose(ASM_File_Input);
 }
 
@@ -270,9 +265,10 @@ int check_label_exists(char buffer_instruction_input[BUFFER_SIZE])
 //returns the memory address of a label
 int return_labels_memory_address(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels)
 {
-    for(int i = 0; i < *number_of_labels; i++)
+    //printf("%s", buffer_instruction_input);
+    for(int i = 0; i < number_of_labels; i++)
     {
-        if(strstr(labels_input[i],buffer_instruction_input) != NULL)
+        if(strstr(labels_input[0] + 64*i,buffer_instruction_input) != NULL)
         {
             return labels_mem_address_input[i];
         }
@@ -887,8 +883,6 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     }
     else if(strncmp(instruction_header,"JAL", 3) == 0 )
     {
-
-        strncpy(label_input_instruct,strchr(buffer_instruction_input, ',') + 1, 32);
         
         //Input Imm[19:0] (BITS [31:12])
         int imm[20];
@@ -909,10 +903,22 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         }
         else
         {
-            //Convert a label to a memory address
-            if(return_labels_memory_address(file_length_input, label_input_instruct, labels_input, &labels_mem_address_input, &number_of_labels) <= 1048576)
+            //appending a ':' to the end of the search label to find the label later on
+            int j = 0;
+            strncpy(label_input_instruct,strchr(buffer_instruction_input, ',') + 1, 32);
+            while(label_input_instruct[j] != NULL)
             {
-                dec_To_Binary(return_labels_memory_address(file_length_input, label_input_instruct, labels_input, &labels_mem_address_input, &number_of_labels), &imm, 20); 
+                j++;
+            }
+            char label_modified[j + 1];
+            label_modified[j-1] = ':';
+            label_modified[j] = '\0';
+            strncpy(label_modified, label_input_instruct, j-1);
+
+            //Convert a label to a memory address
+            if(return_labels_memory_address(file_length_input, label_modified, labels_input, labels_mem_address_input, number_of_labels) <= 1048576)
+            {
+                dec_To_Binary(return_labels_memory_address(file_length_input, label_modified, labels_input, labels_mem_address_input, number_of_labels), &imm, 20); 
             }
             else
             {
