@@ -161,6 +161,7 @@ int main(void) {
     printf("\n\nFile processing finished\n\n");
     fclose(ASM_File);
     fclose(Machine_File);
+    
 }
 
 int file_number_lines(char asm_file_input_name[32])
