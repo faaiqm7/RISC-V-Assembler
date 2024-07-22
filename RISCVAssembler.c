@@ -150,7 +150,7 @@ int main(void) {
                 //if previous line and current line are not labels then increment memory address (it is instructions)
                 dec_instruct_address += 4;
             }
-            //printf("@%.4d %s\n", dec_instruct_address, buffer);
+            printf("@%.4d %s\n", dec_instruct_address, buffer);
             strcpy(prev_buffer,buffer);
             current_line++;
         }
@@ -957,15 +957,15 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     }
 
     //Input RD (BITS [11:7])
-        int rd[5];
-        char rd_string[3];
-        strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
-        strcat(rd_string, "\0");
-        dec_To_Binary(atoi(rd_string), &rd, 5);
-        for(int i = 0; i < 5; i++)
-        {
-            buffer_machine[20 + i] = rd[i] +'0';
-        }
+    int rd[5];
+    char rd_string[3];
+    strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
+    strcat(rd_string, "\0");
+    dec_To_Binary(atoi(rd_string), &rd, 5);
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[20 + i] = rd[i] +'0';
+    }
 
     //New Line Character (not related)
     buffer_machine[32] = '\0';
@@ -1109,9 +1109,103 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
 }
 
 //Load Instructions Handler
-void LI_Handle()
+void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
+    //examples
+    //lw   # rd = mem[rs1+imm]       ; load word
+    //lh   # rd = mem[rs1+imm][0:15] ; load half word
+    //lhu  # rd = mem[rs1+imm][0:15] ; load half word unsigned
+    //lb   # rd = mem[rs1+imm][0:7]  ; load byte
+    //lbu  # rd = mem[rs1+imm][0:7]  ; load byte unsigned
+    //lw x7,x5,#124 //Loads whatever is at memory(x5 + 124 offset) into x7
 
+    char buffer_machine[33];
+
+    //Input Imm[11:0] (BITS [31:20])
+    int imm[12];
+    char imm_string[5];
+    //We are dealing with a number address
+    strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 4);
+    strcat(imm_string, "\0");
+    if(atoi(imm_string) <= 4096)
+    {
+        dec_To_Binary(atoi(imm_string), &imm, 12);
+    }
+    else
+    {
+        printf("\nERROR: Jump (JALR) exceeds allowed amount\n");
+    }
+
+    //Input RS1 (BITS [19:15])
+    int rs1[5];
+    char rs1_string[3];
+    strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
+    strcat(rs1_string, "\0");
+    dec_To_Binary(atoi(rs1_string), &rs1, 5);
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[i + 12] = rs1[i] +'0';
+    }
+
+    //Input RD (BITS [11:7])
+    int rd[5];
+    char rd_string[3];
+    strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
+    strcat(rd_string, "\0");
+    dec_To_Binary(atoi(rd_string), &rd, 5);
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[20 + i] = rd[i] +'0';
+    }
+
+    //Input opcode (BITS [6:0])
+    buffer_machine[25] = '0';
+    buffer_machine[26] = '0';
+    buffer_machine[27] = '0';
+    buffer_machine[28] = '0';
+    buffer_machine[29] = '0';
+    buffer_machine[30] = '1';
+    buffer_machine[31] = '1';  
+
+    if(strncmp(instruction_header,"LHU", 3) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+    else if(strncmp(instruction_header,"LBU", 3) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '1';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }
+    else if(strncmp(instruction_header,"LW", 2) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '1';
+        buffer_machine[19] = '0';
+    }
+    else if(strncmp(instruction_header,"LH", 2) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+    else if(strncmp(instruction_header,"LB", 2) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }
+
+    //New Line Character (not related)
+    buffer_machine[32] = '\0';
+    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
 }
 
 //Store Instructions Handler
