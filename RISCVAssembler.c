@@ -25,6 +25,8 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
 void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels);
 void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels);
+void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6]);
+void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6]);
 
 int main(void) {
 
@@ -1070,7 +1072,7 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     }
     for(int i = 0; i < 4; i++)
     {
-        buffer_machine[20 + i] = imm[1 + i] +'0';
+        buffer_machine[20 + i] = imm[7 + i] +'0';
     }
     buffer_machine[24] = imm[1] +'0';
 
@@ -1117,7 +1119,7 @@ void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     //lhu  # rd = mem[rs1+imm][0:15] ; load half word unsigned
     //lb   # rd = mem[rs1+imm][0:7]  ; load byte
     //lbu  # rd = mem[rs1+imm][0:7]  ; load byte unsigned
-    //lw x7,x5,#124 //Loads whatever is at memory(x5 + 124 offset) into x7
+    //Example: lw x7,x5,#124 //Loads whatever is at memory(x5 + 124 offset) into x7
 
     char buffer_machine[33];
 
@@ -1209,7 +1211,93 @@ void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
 }
 
 //Store Instructions Handler
-void SI_Handle()
+void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
+    //examples
+    //sw  # mem[rs1+imm] = rs2             ; store word
+    //sh  # mem[rs1+imm][0:15] = rs2[0:15] ; store half word
+    //sb  # mem[rs1+imm][0:7] = rs2[0:7]   ; store byte
+    //Example: sw x7,x5,#124 //store whatever is in register x7 into memorry address( x5 + 124)
+    //Template: sw rs2,rs1,#imm_offset
+    //x7 = rs2 and x5 = rs1, and #124 = imm
 
+    char buffer_machine[33];
+
+    //Input RS1 (BITS [19:15])
+    int rs1[5];
+    char rs1_string[3];
+    strncpy(rs1_string,strstr(buffer_instruction_input, " ,x") + 2, 2);
+    strcat(rs1_string, "\0");
+    dec_To_Binary(atoi(rs1_string), &rs1, 5);
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[12 + i] = rs1[i] +'0';
+    }
+
+    //Input RS2 (BITS [24:20])
+    int rs2[5];
+    char rs2_string[3];
+    strncpy(rs2_string,strstr(buffer_instruction_input, " x") + 2, 2);
+    strcat(rs2_string, "\0");
+    dec_To_Binary(atoi(rs2_string), &rs2, 5);
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[7 + i] = rs2[i] +'0';
+    }
+
+    //Input opcode (BITS [6:0])
+    buffer_machine[25] = '0';
+    buffer_machine[26] = '1';
+    buffer_machine[27] = '0';
+    buffer_machine[28] = '0';
+    buffer_machine[29] = '0';
+    buffer_machine[30] = '1';
+    buffer_machine[31] = '1'; 
+
+    //Input Imm[11:0]
+    int imm[12];
+    char imm_string[5];
+
+    //We are dealing with a number address
+    strcpy(imm_string, strstr(buffer_instruction_input, "#") + 1);
+    strcat(imm_string, "\0");
+    if(atoi(imm_string) <= 4096)
+    {
+        dec_To_Binary(atoi(imm_string), &imm, 12);
+    }
+
+    for(int i = 0; i < 7; i++)
+    {
+        buffer_machine[0 + i] = imm[0 + i] +'0';
+    }
+    for(int i = 0; i < 5; i++)
+    {
+        buffer_machine[20 + i] = imm[7 + i] +'0';
+    }
+
+    if(strncmp(instruction_header,"SB", 2) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '0';
+    }
+    else if(strncmp(instruction_header,"SH", 2) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '0';
+        buffer_machine[19] = '1';
+    }
+    else if(strncmp(instruction_header,"SW", 2) == 0)
+    {
+        //Input funct3 (BITS [14:12])
+        buffer_machine[17] = '0';
+        buffer_machine[18] = '1';
+        buffer_machine[19] = '0';
+    }
+
+    //New Line Character (not related)
+    buffer_machine[32] = '\0';
+    fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
 }
