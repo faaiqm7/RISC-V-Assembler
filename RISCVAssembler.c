@@ -88,41 +88,45 @@ int main(void) {
             }
             strncpy(buffer_instruction, buffer + k, 5);
             strcat(buffer_instruction, "\0");
+            for(int i = 0; i < 5; i++)
+            {
+                buffer_instruction[i] = tolower(buffer_instruction[i]);
+            }
             //IRII (I-Type Instructions)
-            if(strncmp(buffer_instruction, "ADDI", 4) == 0 || strncmp(buffer_instruction, "ANDI", 4) == 0 || strncmp(buffer_instruction, "ORI", 3) == 0 ||
-               strncmp(buffer_instruction, "XORI", 4) == 0 || strncmp(buffer_instruction, "SLTI", 4) == 0 || strncmp(buffer_instruction, "NOP", 3) == 0 ||
-               strncmp(buffer_instruction, "SLLI", 4) == 0 || strncmp(buffer_instruction, "SRLI", 4) == 0 || strncmp(buffer_instruction, "SRAI", 4) == 0 ||
-               strncmp(buffer_instruction, "LUI", 3) == 0  || strncmp(buffer_instruction, "AUIPC", 5) == 0)
+            if(strncmp(buffer_instruction, "addi", 4) == 0 || strncmp(buffer_instruction, "andi", 4) == 0 || strncmp(buffer_instruction, "ori", 3) == 0 ||
+               strncmp(buffer_instruction, "xori", 4) == 0 || strncmp(buffer_instruction, "slti", 4) == 0 || strncmp(buffer_instruction, "nop", 3) == 0 ||
+               strncmp(buffer_instruction, "SLLI", 4) == 0 || strncmp(buffer_instruction, "SRLI", 4) == 0 || strncmp(buffer_instruction, "srai", 4) == 0 ||
+               strncmp(buffer_instruction, "lui", 3) == 0  || strncmp(buffer_instruction, "auipc", 5) == 0)
             {
                 IRII_Handle(buffer, Machine_File, buffer_instruction);
             }
             //IRRI (R-Type Instructions)
-            else if(strncmp(buffer_instruction, "ADD", 3) == 0 || strncmp(buffer_instruction, "SLT", 3) == 0 || strncmp(buffer_instruction, "SLTU", 4) == 0 ||
-                    strncmp(buffer_instruction, "AND", 3) == 0 || strncmp(buffer_instruction, "OR", 2) == 0 || strncmp(buffer_instruction, "XOR", 3 ) == 0 ||
-                    strncmp(buffer_instruction, "SLL", 3) == 0 || strncmp(buffer_instruction, "SRL", 3) == 0 || strncmp(buffer_instruction, "SUB", 3) == 0 ||
-                    strncmp(buffer_instruction, "SRA", 3) == 0)
+            else if(strncmp(buffer_instruction, "add", 3) == 0 || strncmp(buffer_instruction, "slt", 3) == 0 || strncmp(buffer_instruction, "sltu", 4) == 0 ||
+                    strncmp(buffer_instruction, "and", 3) == 0 || strncmp(buffer_instruction, "or", 2) == 0 || strncmp(buffer_instruction, "xor", 3 ) == 0 ||
+                    strncmp(buffer_instruction, "sll", 3) == 0 || strncmp(buffer_instruction, "srl", 3) == 0 || strncmp(buffer_instruction, "sub", 3) == 0 ||
+                    strncmp(buffer_instruction, "sra", 3) == 0)
             {
                 IRRI_Handle(buffer, Machine_File, buffer_instruction);
             }
             //Control Transfer Instructions (J-Type Instructions)
-            else if(strncmp(buffer_instruction, "JAL", 3) == 0 || strncmp(buffer_instruction, "JALR", 4) == 0)
+            else if(strncmp(buffer_instruction, "jal", 3) == 0 || strncmp(buffer_instruction, "jalr", 4) == 0)
             {
                 CTI_Handle(buffer, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels);
             }
             //Conditional Branches (B-Type Instructions)
-            else if(strncmp(buffer_instruction, "BEQ", 3) == 0 || strncmp(buffer_instruction, "BNE", 3) == 0 ||
-                    strncmp(buffer_instruction, "BLT", 3) == 0 || strncmp(buffer_instruction, "BGE", 3) == 0) 
+            else if(strncmp(buffer_instruction, "beq", 3) == 0 || strncmp(buffer_instruction, "bne", 3) == 0 ||
+                    strncmp(buffer_instruction, "blt", 3) == 0 || strncmp(buffer_instruction, "bge", 3) == 0) 
             {
 
             }
             //Load Instructions (I-Type Instructions)
-            else if(strncmp(buffer_instruction, "LW", 2) == 0 || strncmp(buffer_instruction, "LH", 2) == 0 || strncmp(buffer_instruction, "LHU", 3) == 0 ||
-                    strncmp(buffer_instruction, "LB", 2) == 0 || strncmp(buffer_instruction, "LBU", 3) == 0)
+            else if(strncmp(buffer_instruction, "lw", 2) == 0 || strncmp(buffer_instruction, "lh", 2) == 0 || strncmp(buffer_instruction, "lhu", 3) == 0 ||
+                    strncmp(buffer_instruction, "lb", 2) == 0 || strncmp(buffer_instruction, "lbu", 3) == 0)
             {
 
             }
             //Store Instructions (S-Type Instructions)
-            else if(strncmp(buffer_instruction, "SW", 2) == 0 || strncmp(buffer_instruction, "SH", 2) == 0 || strncmp(buffer_instruction, "SB", 2) == 0 )
+            else if(strncmp(buffer_instruction, "sw", 2) == 0 || strncmp(buffer_instruction, "sh", 2) == 0 || strncmp(buffer_instruction, "sb", 2) == 0 )
             {
 
             }
@@ -274,7 +278,6 @@ int check_label_exists(char buffer_instruction_input[BUFFER_SIZE])
 //returns the memory address of a label
 int return_labels_memory_address(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels)
 {
-    //printf("%s", buffer_instruction_input);
     for(int i = 0; i < number_of_labels; i++)
     {
         if(strstr(labels_input[0] + 64*i,buffer_instruction_input) != NULL)
@@ -304,7 +307,6 @@ void addToBufferMachine(char buffer_instruction_input[BUFFER_SIZE], int imm_leng
     if(filterSearchLength > 1)
     {
         strncpy(imm_string,strstr(buffer_instruction_input, filterSearch) + filterSearchLength, imm_dec_length);
-        printf("Test:%d\n", imm_dec_length);
     }
     else
     {
@@ -358,8 +360,8 @@ void addOpCodeToBufferMachine(char buffer_machine_input[33], char opcode_Input[7
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
     char buffer_machine[33];
-    if(strncmp(instruction_header,"ADDI", 4) == 0 || strncmp(instruction_header,"ANDI", 4) == 0 || strncmp(instruction_header,"ORI", 3) == 0 || strncmp(instruction_header,"XORI", 4) == 0 || 
-       strncmp(instruction_header,"SLTI", 4) == 0)
+    if(strncmp(instruction_header,"addi", 4) == 0 || strncmp(instruction_header,"andi", 4) == 0 || strncmp(instruction_header,"ori", 3) == 0 || strncmp(instruction_header,"xori", 4) == 0 || 
+       strncmp(instruction_header,"slti", 4) == 0)
        {
             //Input Imm[11:0] (BITS [31:20])
             addToBufferMachine(buffer_instruction_input,12,4,buffer_machine,31,11,0, 1, '#');
@@ -370,7 +372,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             //Input RD (BITS [11:7])
             addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
 
-            if(strncmp(instruction_header,"ADDI", 4) == 0)
+            if(strncmp(instruction_header,"addi", 4) == 0)
             {
                 //Ex. ADDI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
                 //    ADDI R25,R12,#6
@@ -381,7 +383,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //Input opcode (BITS [6:0])
                 addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
-            else if(strncmp(instruction_header, "ANDI", 4) == 0)
+            else if(strncmp(instruction_header, "andi", 4) == 0)
             {
                 //Ex. ANDI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
                 //    ANDI R25,R12,#6
@@ -392,7 +394,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //Input opcode (BITS [6:0])
                 addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
-            else if(strncmp(instruction_header, "ORI", 3) == 0)
+            else if(strncmp(instruction_header, "ori", 3) == 0)
             {
                 //Ex. ORI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
                 //    ORI R25,R12,#6
@@ -403,7 +405,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //Input opcode (BITS [6:0])
                 addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
-            else if(strncmp(instruction_header, "XORI", 4) == 0)
+            else if(strncmp(instruction_header, "xori", 4) == 0)
             {
                 //Ex. XORI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
                 //    XORI R25,R12,#6
@@ -414,7 +416,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //Input opcode (BITS [6:0])
                 addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
-            else if(strncmp(instruction_header, "SLTI", 4) == 0)
+            else if(strncmp(instruction_header, "slti", 4) == 0)
             {
                 //Ex. SLTI Rd,Rs1,#imm (ONLY FOR THIS FORMAT)
                 //    SLTI R25,R12,#6
@@ -426,7 +428,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
     }
-    else if(strncpy(instruction_header, "NOP", 3) == 0)
+    else if(strncpy(instruction_header, "nop", 3) == 0)
     {
         for(int i = 0; i < 25; i++)
         {
@@ -436,7 +438,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         //Input opcode (BITS [6:0])
         addOpCodeToBufferMachine(buffer_machine, "0010011");
     }
-    else if(strncpy(instruction_header, "SLLI", 4) == 0 || strncpy(instruction_header, "SRLI", 4) == 0 || strncpy(instruction_header, "SRAI", 4))
+    else if(strncpy(instruction_header, "slli", 4) == 0 || strncpy(instruction_header, "srli", 4) == 0 || strncpy(instruction_header, "srai", 4))
     {
         //Input Imm[4:0] (BITS [24:20])
         addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,24,4,0, 1, '#'); 
@@ -455,13 +457,13 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         buffer_machine[4] = 0;
         buffer_machine[5] = 0;
         buffer_machine[6] = 0;
-        if(strncmp(instruction_header, "SRAI", 4) == 0)
+        if(strncmp(instruction_header, "srai", 4) == 0)
         {
             buffer_machine[1] = 1;
         }
 
         //funct3 BITS[14:12] && OPCODE BITS[6:0]
-        if(strncmp(instruction_header, "SLLI", 4) == 0)
+        if(strncmp(instruction_header, "slli", 4) == 0)
         {
             //Input funct3 (BITS [14:12])
             addFunct3ToBufferMachine(buffer_machine, "001");
@@ -469,7 +471,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             //Input opcode (BITS [6:0])
             addOpCodeToBufferMachine(buffer_machine, "0010011");
         }
-        else if(strncmp(instruction_header, "SRLI", 4) == 0)
+        else if(strncmp(instruction_header, "srli", 4) == 0)
         {
             //Input funct3 (BITS [14:12])
             addFunct3ToBufferMachine(buffer_machine, "101");
@@ -477,7 +479,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             //Input opcode (BITS [6:0])
             addOpCodeToBufferMachine(buffer_machine, "0010011");
         }
-        else if(strncmp(instruction_header, "SRAI", 4) == 0)
+        else if(strncmp(instruction_header, "srai", 4) == 0)
         {
             //Input funct3 (BITS [14:12])   
             addFunct3ToBufferMachine(buffer_machine, "101");
@@ -486,7 +488,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             addOpCodeToBufferMachine(buffer_machine, "0010011");
         }
     }
-    else if(strncpy(instruction_header, "LUI", 3) == 0 || strncpy(instruction_header, "AUIPC", 5) == 0)
+    else if(strncpy(instruction_header, "lui", 3) == 0 || strncpy(instruction_header, "auipc", 5) == 0)
     {
         //Ex. LUI R4,#imm
         //Ex. AUIPC R5,#imm
@@ -497,12 +499,12 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         //Input RD (BITS [11:7])
         addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
 
-        if(strncmp(instruction_header, "LUI", 3) == 0)
+        if(strncmp(instruction_header, "lui", 3) == 0)
         {
             //Input opcode (BITS [6:0])
             addOpCodeToBufferMachine(buffer_machine, "0110111");
         }
-        else if(strncmp(instruction_header, "AUIPC", 5) == 0)
+        else if(strncmp(instruction_header, "auipc", 5) == 0)
         {
             //Input opcode (BITS [6:0])
             addOpCodeToBufferMachine(buffer_machine, "0010111");
@@ -533,49 +535,49 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     //Input opcode (BITS [6:0])
     addOpCodeToBufferMachine(buffer_machine, "0110011");
 
-    if(strncmp(instruction_header, "ADD", 3) == 0)
+    if(strncmp(instruction_header, "add", 3) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "000");
     }
-    else if(strncmp(instruction_header, "SUB", 3) == 0)
+    else if(strncmp(instruction_header, "sub", 3) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0100000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "000");
     }
-    else if(strncmp(instruction_header, "SLL", 3) == 0)
+    else if(strncmp(instruction_header, "sll", 3) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "001");
     }
-    else if(strncmp(instruction_header, "SLTU", 4) == 0)
+    else if(strncmp(instruction_header, "sltu", 4) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "011");
     }
-    else if(strncmp(instruction_header, "SLT", 3) == 0)
+    else if(strncmp(instruction_header, "slt", 3) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "010");
     }
-    else if(strncmp(instruction_header,"XOR", 3) == 0)
+    else if(strncmp(instruction_header,"xor", 3) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "100");
     }   
-    else if(strncmp(instruction_header, "SRL", 3) == 0)
+    else if(strncmp(instruction_header, "srl", 3) == 0)
     {
         //funct7 (BITS[31:25])
         buffer_machine[0] = '0';
@@ -596,21 +598,21 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "101");
     }
-    else if(strncmp(instruction_header, "SRA", 3) == 0)
+    else if(strncmp(instruction_header, "sra", 3) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0100000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "101");
     }
-    else if(strncmp(instruction_header, "OR", 2) == 0)
+    else if(strncmp(instruction_header, "or", 2) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "110");
     }
-    else if(strncmp(instruction_header, "AND", 3) == 0)
+    else if(strncmp(instruction_header, "and", 3) == 0)
     {
         //Input funct7 (BITS[31:25]
         addFunct7ToBufferMachine(buffer_machine, "0000000");
@@ -636,7 +638,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     char buffer_machine[33];
     char label_input_instruct[32];
 
-    if(strncmp(instruction_header,"JALR", 4) == 0 )
+    if(strncmp(instruction_header,"jalr", 4) == 0 )
     {
         //Input Imm[11:0] (BITS [31:20])
         int imm[12];
@@ -659,15 +661,16 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         {
             //appending a ':' to the end of the search label to find the label later on
             int j = 0;
-            strncpy(label_input_instruct,strchr(buffer_instruction_input, ',') + 1, 32);
+            strncpy(label_input_instruct,strchr(buffer_instruction_input, ',') + 1, BUFFER_SIZE);
+            strncpy(label_input_instruct,strchr(label_input_instruct, ',') + 1, 32);
             while(label_input_instruct[j] != NULL)
             {
                 j++;
             }
-            char label_modified[j + 1];
-            label_modified[j-1] = ':';
-            label_modified[j] = '\0';
-            strncpy(label_modified, label_input_instruct, j-1);
+            char label_modified[j + 2];
+            label_modified[j] = ':';
+            label_modified[j+1] = '\0';
+            strncpy(label_modified, label_input_instruct, j);
 
             //Convert a label to a memory address
             if(return_labels_memory_address(file_length_input, label_modified, labels_input, &labels_mem_address_input, &number_of_labels) <= 4096)
@@ -693,7 +696,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         //Input opcode (BITS [6:0])
         addOpCodeToBufferMachine(buffer_machine, "1100111"); 
     }
-    else if(strncmp(instruction_header,"JAL", 3) == 0 )
+    else if(strncmp(instruction_header,"jal", 3) == 0 )
     {
         
         //Input Imm[19:0] (BITS [31:12])
@@ -842,22 +845,22 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     }
     buffer_machine[24] = imm[1] +'0';
 
-    if(strncmp(instruction_header,"BEQ", 3) == 0)
+    if(strncmp(instruction_header,"beq", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "000");
     }
-    else if(strncmp(instruction_header,"BNE", 3) == 0)
+    else if(strncmp(instruction_header,"bne", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "001");
     }
-    else if(strncmp(instruction_header,"BLT", 3) == 0)
+    else if(strncmp(instruction_header,"blt", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "100");
     }
-    else if(strncmp(instruction_header,"BGE", 3) == 0)
+    else if(strncmp(instruction_header,"bge", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "101");
@@ -905,27 +908,27 @@ void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     //Input opcode (BITS [6:0])
     addOpCodeToBufferMachine(buffer_machine, "0000011"); 
 
-    if(strncmp(instruction_header,"LHU", 3) == 0)
+    if(strncmp(instruction_header,"lhu", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "101");
     }
-    else if(strncmp(instruction_header,"LBU", 3) == 0)
+    else if(strncmp(instruction_header,"lbu", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "100");
     }
-    else if(strncmp(instruction_header,"LW", 2) == 0)
+    else if(strncmp(instruction_header,"lw", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "010");
     }
-    else if(strncmp(instruction_header,"LH", 2) == 0)
+    else if(strncmp(instruction_header,"lh", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "001");
     }
-    else if(strncmp(instruction_header,"LB", 2) == 0)
+    else if(strncmp(instruction_header,"lb", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "000");
@@ -965,17 +968,17 @@ void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     int imm[12];
     char imm_string[5];
 
-    if(strncmp(instruction_header,"SB", 2) == 0)
+    if(strncmp(instruction_header,"sb", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "000");
     }
-    else if(strncmp(instruction_header,"SH", 2) == 0)
+    else if(strncmp(instruction_header,"sh", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "001");
     }
-    else if(strncmp(instruction_header,"SW", 2) == 0)
+    else if(strncmp(instruction_header,"sw", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
         addFunct3ToBufferMachine(buffer_machine, "010");
