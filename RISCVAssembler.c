@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
 
 #define BUFFER_SIZE 128
 
@@ -21,6 +23,10 @@ void dec_To_Binary(int dec_input, int* binary_output, int sizeOfArray);
 void save_labels_address(int file_length_input, char asm_file_input_name[32], char labels_input[file_length_input][32], int* labels_mem_address_input, int* input_num_labels);
 int check_label_exists(char buffer_instruction_input[BUFFER_SIZE]);
 int return_labels_memory_address(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels);
+void addToBufferMachine(char buffer_instruction_input[BUFFER_SIZE], int imm_length, int imm_dec_length, char buffer_machine_input[33],int buffer_start_index, int imm_start_index, int imm_end_index, int filterSearchLength, char filterSearch[filterSearchLength]);
+void addFunct3ToBufferMachine(char buffer_machine_input[33], char funct3_Input[3]);
+void addFunct7ToBufferMachine(char buffer_machine_input[33], char funct7_Input[7]);
+void addOpCodeToBufferMachine(char buffer_machine_input[33], char opcode_Input[7]);
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
 void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels);
@@ -280,6 +286,74 @@ int return_labels_memory_address(int file_length_input, char buffer_instruction_
     return -1;
 }
 
+//Inputs into buffer_machine at correct indexes [IMM,RS1,RS2,RD]
+void addToBufferMachine(char buffer_instruction_input[BUFFER_SIZE], int imm_length, int imm_dec_length, char buffer_machine_input[33],int buffer_start_index, int imm_start_index, int imm_end_index, int filterSearchLength, char filterSearch[filterSearchLength])
+{
+    /*
+     Convention Note:
+        Instruction: 0000 0000 0000 0000 0000 0000 0000 0000
+                     ^MSB                                  ^LSB
+                     starting index should be the most significant bit and ending index should be the least significant bit
+                     - read from left to right pretty much.
+    */
+
+    int imm[imm_length];
+
+    char imm_string[imm_dec_length + 1];
+
+    if(filterSearchLength > 1)
+    {
+        strncpy(imm_string,strstr(buffer_instruction_input, filterSearch) + filterSearchLength, imm_dec_length);
+        printf("Test:%d\n", imm_dec_length);
+    }
+    else
+    {
+        strncpy(imm_string,strchr(buffer_instruction_input, filterSearch) + filterSearchLength, imm_dec_length);
+    }
+    strcat(imm_string, "\0");
+    dec_To_Binary(atoi(imm_string), &imm, imm_length);
+
+    int i = 0;
+
+    while(i < (imm_start_index-imm_end_index) + 1)
+    {
+        buffer_machine_input[31-buffer_start_index + i] = imm[imm_length-1-imm_start_index + i] + '0';
+        i++;
+    }
+}
+
+//Inputs Funct3 into buffer_machine at correct indexes
+void addFunct3ToBufferMachine(char buffer_machine_input[33], char funct3_Input[3])
+{
+    //Read from Left to Right Funct3
+
+    for(int i = 0; i < 3; i++)
+    {
+        buffer_machine_input[17 + i] = funct3_Input[i];
+    }
+}
+
+//Inputs Funct7into buffer_machine at correct indexes
+void addFunct7ToBufferMachine(char buffer_machine_input[33], char funct7_Input[7])
+{
+    //Read from Left to Right Funct3
+
+    for(int i = 0; i < 7; i++)
+    {
+        buffer_machine_input[0 + i] = funct7_Input[i];
+    }
+}
+
+void addOpCodeToBufferMachine(char buffer_machine_input[33], char opcode_Input[7])
+{
+    //Read from Left to Right Funct7
+
+    for(int i = 0; i < 7; i++)
+    {
+        buffer_machine_input[25 + i] = opcode_Input[i];
+    }
+}
+
 //Integer Register-Immediate Instructions Handler
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
@@ -288,39 +362,13 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
        strncmp(instruction_header,"SLTI", 4) == 0)
        {
             //Input Imm[11:0] (BITS [31:20])
-            int imm[12];
-            char imm_string[5];
-            strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 4);
-            strcat(imm_string, "\0");
-            dec_To_Binary(atoi(imm_string), &imm, 12);
-            for(int i = 0; i < 12; i++)
-            {
-                buffer_machine[i] = imm[i] +'0';
-            }
+            addToBufferMachine(buffer_instruction_input,12,4,buffer_machine,31,11,0, 1, '#');
 
             //Input RS1 (BITS [19:15])
-            int rs1[5];
-            char rs1_string[3];
-            strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
-            strcat(rs1_string, "\0");
-            dec_To_Binary(atoi(rs1_string), &rs1, 5);
-
-            for(int i = 0; i < 5; i++)
-            {
-
-                buffer_machine[i + 12] = rs1[i] +'0';
-            }
+            addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
             //Input RD (BITS [11:7])
-            int rd[5];
-            char rd_string[3];
-            strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
-            strcat(rd_string, "\0");
-            dec_To_Binary(atoi(rd_string), &rd, 5);
-            for(int i = 0; i < 5; i++)
-            {
-                buffer_machine[20 + i] = rd[i] +'0';
-            }
+            addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
 
             if(strncmp(instruction_header,"ADDI", 4) == 0)
             {
@@ -328,19 +376,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //    ADDI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '0';
-                buffer_machine[18] = '0';
-                buffer_machine[19] = '0';
+                addFunct3ToBufferMachine(buffer_machine, "000");
 
                 //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
-
+                addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
             else if(strncmp(instruction_header, "ANDI", 4) == 0)
             {
@@ -348,18 +387,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //    ANDI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '1';
-                buffer_machine[18] = '1';
-                buffer_machine[19] = '1';
+                addFunct3ToBufferMachine(buffer_machine, "111");
 
                 //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
+                addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
             else if(strncmp(instruction_header, "ORI", 3) == 0)
             {
@@ -367,18 +398,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //    ORI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '1';
-                buffer_machine[18] = '1';
-                buffer_machine[19] = '0';
+                addFunct3ToBufferMachine(buffer_machine, "110");
 
                 //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
+                addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
             else if(strncmp(instruction_header, "XORI", 4) == 0)
             {
@@ -386,18 +409,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //    XORI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '1';
-                buffer_machine[18] = '0';
-                buffer_machine[19] = '0';
+                addFunct3ToBufferMachine(buffer_machine, "100");
 
                 //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
+                addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
             else if(strncmp(instruction_header, "SLTI", 4) == 0)
             {
@@ -405,18 +420,10 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
                 //    SLTI R25,R12,#6
 
                 //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '0';
-                buffer_machine[18] = '1';
-                buffer_machine[19] = '0';
+                addFunct3ToBufferMachine(buffer_machine, "010");
 
                 //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
+                addOpCodeToBufferMachine(buffer_machine, "0010011");
             }
     }
     else if(strncpy(instruction_header, "NOP", 3) == 0)
@@ -426,113 +433,58 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             buffer_machine[i] = '0';
         }
 
-        //opcode
-        buffer_machine[25] = '0';
-        buffer_machine[26] = '0';
-        buffer_machine[27] = '1';
-        buffer_machine[28] = '0';
-        buffer_machine[29] = '0';
-        buffer_machine[30] = '1';
-        buffer_machine[31] = '1';
+        //Input opcode (BITS [6:0])
+        addOpCodeToBufferMachine(buffer_machine, "0010011");
     }
     else if(strncpy(instruction_header, "SLLI", 4) == 0 || strncpy(instruction_header, "SRLI", 4) == 0 || strncpy(instruction_header, "SRAI", 4))
     {
         //Input Imm[4:0] (BITS [24:20])
-        int imm[5];
-        char imm_string[3];
-        strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 2);
-        strcat(imm_string, "\0");
-        dec_To_Binary(atoi(imm_string), &imm, 5);
-        for(int i = 0; i < 5; i++)
-        {
-
-            buffer_machine[i + 7] = imm[i] +'0';
-        }
+        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,24,4,0, 1, '#'); 
 
         //Input RS1 (BITS [19:15])
-            int rs1[5];
-            char rs1_string[3];
-            strncpy(rs1_string,strstr(buffer_instruction_input, ",R") + 2, 2);
-            strcat(rs1_string, "\0");
-            dec_To_Binary(atoi(rs1_string), &rs1, 5);
-            for(int i = 0; i < 5; i++)
-            {
-                buffer_machine[i + 12] = rs1[i] +'0';
-            }
+        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
-            //Input RD (BITS [11:7])
-            int rd[5];
-            char rd_string[3];
-            strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
-            strcat(rd_string, "\0");
-            dec_To_Binary(atoi(rd_string), &rd, 5);
-            for(int i = 0; i < 5; i++)
-            {
-                buffer_machine[20 + i] = rd[i] +'0';
-            }
+        //Input RD (BITS [11:7])
+        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
 
-            //imm[11:5] BITS[31:25]
-            buffer_machine[0] = 0;
-            buffer_machine[1] = 0;
-            buffer_machine[2] = 0;
-            buffer_machine[3] = 0;
-            buffer_machine[4] = 0;
-            buffer_machine[5] = 0;
-            buffer_machine[6] = 0;
-            if(strncmp(instruction_header, "SRAI", 4) == 0)
-            {
-                buffer_machine[1] = 1;
-            }
+        //imm[11:5] BITS[31:25]
+        buffer_machine[0] = 0;
+        buffer_machine[1] = 0;
+        buffer_machine[2] = 0;
+        buffer_machine[3] = 0;
+        buffer_machine[4] = 0;
+        buffer_machine[5] = 0;
+        buffer_machine[6] = 0;
+        if(strncmp(instruction_header, "SRAI", 4) == 0)
+        {
+            buffer_machine[1] = 1;
+        }
 
-            //funct3 BITS[14:12] && OPCODE BITS[6:0]
-            if(strncmp(instruction_header, "SLLI", 4) == 0)
-            {
-                //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '0';
-                buffer_machine[18] = '0';
-                buffer_machine[19] = '1';
+        //funct3 BITS[14:12] && OPCODE BITS[6:0]
+        if(strncmp(instruction_header, "SLLI", 4) == 0)
+        {
+            //Input funct3 (BITS [14:12])
+            addFunct3ToBufferMachine(buffer_machine, "001");
 
-                //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
-            }
-            else if(strncmp(instruction_header, "SRLI", 4) == 0)
-            {
-                //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '1';
-                buffer_machine[18] = '0';
-                buffer_machine[19] = '1';
+            //Input opcode (BITS [6:0])
+            addOpCodeToBufferMachine(buffer_machine, "0010011");
+        }
+        else if(strncmp(instruction_header, "SRLI", 4) == 0)
+        {
+            //Input funct3 (BITS [14:12])
+            addFunct3ToBufferMachine(buffer_machine, "101");
 
-                //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
-            }
-            else if(strncmp(instruction_header, "SRAI", 4) == 0)
-            {
-                //Input funct3 (BITS [14:12])
-                buffer_machine[17] = '1';
-                buffer_machine[18] = '0';
-                buffer_machine[19] = '1';
+            //Input opcode (BITS [6:0])
+            addOpCodeToBufferMachine(buffer_machine, "0010011");
+        }
+        else if(strncmp(instruction_header, "SRAI", 4) == 0)
+        {
+            //Input funct3 (BITS [14:12])   
+            addFunct3ToBufferMachine(buffer_machine, "101");
 
-                //Input opcode (BITS [6:0])
-                buffer_machine[25] = '0';
-                buffer_machine[26] = '0';
-                buffer_machine[27] = '1';
-                buffer_machine[28] = '0';
-                buffer_machine[29] = '0';
-                buffer_machine[30] = '1';
-                buffer_machine[31] = '1';
-            }
+            //Input opcode (BITS [6:0])
+            addOpCodeToBufferMachine(buffer_machine, "0010011");
+        }
     }
     else if(strncpy(instruction_header, "LUI", 3) == 0 || strncpy(instruction_header, "AUIPC", 5) == 0)
     {
@@ -540,50 +492,20 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         //Ex. AUIPC R5,#imm
 
         //Input Imm[19:0] (BITS [31:12])
-        int imm[20];
-        char imm_string[8];
-        strncpy(imm_string,strchr(buffer_instruction_input, '#') + 1, 7);
-        strcat(imm_string, "\0");
-        dec_To_Binary(atoi(imm_string), &imm, 12);
-        for(int i = 0; i < 20; i++)
-        {
-
-            buffer_machine[i] = imm[i] +'0';
-        }
+        addToBufferMachine(buffer_instruction_input,20,7,buffer_machine,31,19,0, 1, '#'); 
 
         //Input RD (BITS [11:7])
-        int rd[5];
-        char rd_string[3];
-        strncpy(rd_string,strstr(buffer_instruction_input, " R") + 2, 2);
-        strcat(rd_string, "\0");
-        dec_To_Binary(atoi(rd_string), &rd, 5);
-
-        for(int i = 0; i < 5; i++)
-        {
-            buffer_machine[20 + i] = rd[i] +'0';
-        }
+        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
 
         if(strncmp(instruction_header, "LUI", 3) == 0)
         {
             //Input opcode (BITS [6:0])
-            buffer_machine[25] = '0';
-            buffer_machine[26] = '1';
-            buffer_machine[27] = '1';
-            buffer_machine[28] = '0';
-            buffer_machine[29] = '1';
-            buffer_machine[30] = '1';
-            buffer_machine[31] = '1';
+            addOpCodeToBufferMachine(buffer_machine, "0110111");
         }
         else if(strncmp(instruction_header, "AUIPC", 5) == 0)
         {
             //Input opcode (BITS [6:0])
-            buffer_machine[25] = '0';
-            buffer_machine[26] = '0';
-            buffer_machine[27] = '1';
-            buffer_machine[28] = '0';
-            buffer_machine[29] = '1';
-            buffer_machine[30] = '1';
-            buffer_machine[31] = '1';
+            addOpCodeToBufferMachine(buffer_machine, "0010111");
         }
 
     }
@@ -596,145 +518,62 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
 //Integer Register-Register Instructions Handler
 void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
+    //ADD rd,rs1,rs2
     char buffer_machine[33];
 
     //Input RS2 (BITS [24:20])
-    int rs2[5];
-    char rs2_string[3];
-    strncpy(rs2_string,strstr(buffer_instruction_input, ",x") + 2, 2);
-    strcat(rs2_string, "\0");
-    dec_To_Binary(atoi(rs2_string), &rs2, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[i + 7] = rs2[i] +'0';
-    }
+    addToBufferMachine(strstr(buffer_instruction_input, ",x") + 1,5,2,buffer_machine,24,4,0, 2, ",x");
 
     //Input RS1 (BITS [19:15])
-    int rs1[5];
-    char rs1_string[3];
-    strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
-    strcat(rs1_string, "\0");
-    dec_To_Binary(atoi(rs1_string), &rs1, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[i + 12] = rs1[i] +'0';
-    }
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
     //Input RD (BITS [11:7])
-    int rd[5];
-    char rd_string[3];
-    strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
-    strcat(rd_string, "\0");
-    dec_To_Binary(atoi(rd_string), &rd, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[20 + i] = rd[i] +'0';
-    }
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
 
-     //Input opcode (BITS [6:0])
-    buffer_machine[25] = '0';
-    buffer_machine[26] = '1';
-    buffer_machine[27] = '1';
-    buffer_machine[28] = '0';
-    buffer_machine[29] = '0';
-    buffer_machine[30] = '1';
-    buffer_machine[31] = '1';
+    //Input opcode (BITS [6:0])
+    addOpCodeToBufferMachine(buffer_machine, "0110011");
 
     if(strncmp(instruction_header, "ADD", 3) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '0';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "000");
     }
     else if(strncmp(instruction_header, "SUB", 3) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '1';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0100000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "000");
     }
     else if(strncmp(instruction_header, "SLL", 3) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '0';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "001");
     }
     else if(strncmp(instruction_header, "SLTU", 4) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '0';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '1';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "011");
     }
     else if(strncmp(instruction_header, "SLT", 3) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '0';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '1';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "010");
     }
     else if(strncmp(instruction_header,"XOR", 3) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '0';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "100");
     }   
     else if(strncmp(instruction_header, "SRL", 3) == 0)
     {
@@ -751,54 +590,32 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         buffer_machine[17] = '1';
         buffer_machine[18] = '0';
         buffer_machine[19] = '1';
+
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
+        //Input funct3 (BITS [14:12])
+        addFunct3ToBufferMachine(buffer_machine, "101");
     }
     else if(strncmp(instruction_header, "SRA", 3) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '1';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0100000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "101");
     }
     else if(strncmp(instruction_header, "OR", 2) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '0';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '1';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "110");
     }
     else if(strncmp(instruction_header, "AND", 3) == 0)
     {
-        //funct7 (BITS[31:25])
-        buffer_machine[0] = '0';
-        buffer_machine[1] = '0';
-        buffer_machine[2] = '0';
-        buffer_machine[3] = '0';
-        buffer_machine[4] = '0';
-        buffer_machine[5] = '0';
-        buffer_machine[6] = '0';
-
+        //Input funct7 (BITS[31:25]
+        addFunct7ToBufferMachine(buffer_machine, "0000000");
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '1';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "111");
     }
     
     //New Line Character (not related)
@@ -868,29 +685,13 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         } 
 
         //Input RS1 (BITS [19:15])
-        int rs1[5];
-        char rs1_string[3];
-        strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
-        strcat(rs1_string, "\0");
-        dec_To_Binary(atoi(rs1_string), &rs1, 5);
-        for(int i = 0; i < 5; i++)
-        {
-            buffer_machine[i + 12] = rs1[i] +'0';
-        }
+        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "000");  
 
         //Input opcode (BITS [6:0])
-        buffer_machine[25] = '1';
-        buffer_machine[26] = '1';
-        buffer_machine[27] = '0';
-        buffer_machine[28] = '0';
-        buffer_machine[29] = '1';
-        buffer_machine[30] = '1';
-        buffer_machine[31] = '1';      
+        addOpCodeToBufferMachine(buffer_machine, "1100111"); 
     }
     else if(strncmp(instruction_header,"JAL", 3) == 0 )
     {
@@ -947,29 +748,15 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
         {
             buffer_machine[12 + i] = imm[1 + i] +'0';
         }
- 
+
         //Input opcode (BITS [6:0])
-        buffer_machine[25] = '1';
-        buffer_machine[26] = '1';
-        buffer_machine[27] = '0';
-        buffer_machine[28] = '1';
-        buffer_machine[29] = '1';
-        buffer_machine[30] = '1';
-        buffer_machine[31] = '1';
+        addOpCodeToBufferMachine(buffer_machine, "1101111"); 
 
     }
 
     //Input RD (BITS [11:7])
-    int rd[5];
-    char rd_string[3];
-    strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
-    strcat(rd_string, "\0");
-    dec_To_Binary(atoi(rd_string), &rd, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[20 + i] = rd[i] +'0';
-    }
-
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
+    
     //New Line Character (not related)
     buffer_machine[32] = '\0';
     fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
@@ -993,36 +780,14 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     char buffer_machine[33];
     char label_input_instruct[32];
 
-    //Input RS1 (BITS [19:15])
-    int rs1[5];
-    char rs1_string[3];
-    strncpy(rs1_string,strstr(buffer_instruction_input, " x") + 2, 2);
-    strcat(rs1_string, "\0");
-    dec_To_Binary(atoi(rs1_string), &rs1, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[12 + i] = rs1[i] +'0';
-    }
-
     //Input RS2 (BITS [24:20])
-    int rs2[5];
-    char rs2_string[3];
-    strncpy(rs2_string,strstr(buffer_instruction_input, ",x") + 2, 2);
-    strcat(rs2_string, "\0");
-    dec_To_Binary(atoi(rs2_string), &rs2, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[7 + i] = rs2[i] +'0';
-    }
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,24,4,0, 2, ",x");
+
+    //Input RS1 (BITS [19:15])
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, " x");
 
     //Input opcode (BITS [6:0])
-    buffer_machine[25] = '1';
-    buffer_machine[26] = '1';
-    buffer_machine[27] = '0';
-    buffer_machine[28] = '0';
-    buffer_machine[29] = '0';
-    buffer_machine[30] = '1';
-    buffer_machine[31] = '1';
+    addOpCodeToBufferMachine(buffer_machine, "1100011"); 
 
     //Input Imm[11:0]
     int imm[12];
@@ -1080,30 +845,22 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     if(strncmp(instruction_header,"BEQ", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "000");
     }
     else if(strncmp(instruction_header,"BNE", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "001");
     }
     else if(strncmp(instruction_header,"BLT", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "100");
     }
     else if(strncmp(instruction_header,"BGE", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "101");
     }
 
     //New Line Character (not related)
@@ -1140,70 +897,38 @@ void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     }
 
     //Input RS1 (BITS [19:15])
-    int rs1[5];
-    char rs1_string[3];
-    strncpy(rs1_string,strstr(buffer_instruction_input, ",x") + 2, 2);
-    strcat(rs1_string, "\0");
-    dec_To_Binary(atoi(rs1_string), &rs1, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[i + 12] = rs1[i] +'0';
-    }
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
     //Input RD (BITS [11:7])
-    int rd[5];
-    char rd_string[3];
-    strncpy(rd_string,strstr(buffer_instruction_input, " x") + 2, 2);
-    strcat(rd_string, "\0");
-    dec_To_Binary(atoi(rd_string), &rd, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[20 + i] = rd[i] +'0';
-    }
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
 
     //Input opcode (BITS [6:0])
-    buffer_machine[25] = '0';
-    buffer_machine[26] = '0';
-    buffer_machine[27] = '0';
-    buffer_machine[28] = '0';
-    buffer_machine[29] = '0';
-    buffer_machine[30] = '1';
-    buffer_machine[31] = '1';  
+    addOpCodeToBufferMachine(buffer_machine, "0000011"); 
 
     if(strncmp(instruction_header,"LHU", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "101");
     }
     else if(strncmp(instruction_header,"LBU", 3) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '1';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "100");
     }
     else if(strncmp(instruction_header,"LW", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '1';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "010");
     }
     else if(strncmp(instruction_header,"LH", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "001");
     }
     else if(strncmp(instruction_header,"LB", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "000");
     }
 
     //New Line Character (not related)
@@ -1225,77 +950,35 @@ void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     char buffer_machine[33];
 
     //Input RS1 (BITS [19:15])
-    int rs1[5];
-    char rs1_string[3];
-    strncpy(rs1_string,strstr(buffer_instruction_input, " ,x") + 2, 2);
-    strcat(rs1_string, "\0");
-    dec_To_Binary(atoi(rs1_string), &rs1, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[12 + i] = rs1[i] +'0';
-    }
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
     //Input RS2 (BITS [24:20])
-    int rs2[5];
-    char rs2_string[3];
-    strncpy(rs2_string,strstr(buffer_instruction_input, " x") + 2, 2);
-    strcat(rs2_string, "\0");
-    dec_To_Binary(atoi(rs2_string), &rs2, 5);
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[7 + i] = rs2[i] +'0';
-    }
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,24,4,0, 2, " x");
 
     //Input opcode (BITS [6:0])
-    buffer_machine[25] = '0';
-    buffer_machine[26] = '1';
-    buffer_machine[27] = '0';
-    buffer_machine[28] = '0';
-    buffer_machine[29] = '0';
-    buffer_machine[30] = '1';
-    buffer_machine[31] = '1'; 
+    addOpCodeToBufferMachine(buffer_machine, "0100011"); 
 
     //Input Imm[11:0]
+    addToBufferMachine(buffer_instruction_input,12,4,buffer_machine,31,11,5, 1, '#');
+    addToBufferMachine(buffer_instruction_input,12,4,buffer_machine,11,4,0, 1, '#');
+
     int imm[12];
     char imm_string[5];
-
-    //We are dealing with a number address
-    strcpy(imm_string, strstr(buffer_instruction_input, "#") + 1);
-    strcat(imm_string, "\0");
-    if(atoi(imm_string) <= 4096)
-    {
-        dec_To_Binary(atoi(imm_string), &imm, 12);
-    }
-
-    for(int i = 0; i < 7; i++)
-    {
-        buffer_machine[0 + i] = imm[0 + i] +'0';
-    }
-    for(int i = 0; i < 5; i++)
-    {
-        buffer_machine[20 + i] = imm[7 + i] +'0';
-    }
 
     if(strncmp(instruction_header,"SB", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "000");
     }
     else if(strncmp(instruction_header,"SH", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '0';
-        buffer_machine[19] = '1';
+        addFunct3ToBufferMachine(buffer_machine, "001");
     }
     else if(strncmp(instruction_header,"SW", 2) == 0)
     {
         //Input funct3 (BITS [14:12])
-        buffer_machine[17] = '0';
-        buffer_machine[18] = '1';
-        buffer_machine[19] = '0';
+        addFunct3ToBufferMachine(buffer_machine, "010");
     }
 
     //New Line Character (not related)
