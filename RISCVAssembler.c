@@ -35,10 +35,11 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
 void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6]);
 void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6]);
 
-int main(void) {
+int main(int argc, char **argv) {
 
-    char ASM_File_Name[32];
-    char Machine_File_Name[48] = "";
+    char ASM_File_Name[BUFFER_SIZE] = "";
+    char ASM_File_Name_Input[BUFFER_SIZE];
+    char Machine_File_Name[BUFFER_SIZE] = ""; 
     int file_length;
     int current_line = 1;
     int dec_instruct_address = 0;
@@ -50,11 +51,13 @@ int main(void) {
     /*/////////////////////
     //   Read from FILE  //
     *//////////////////////
-    printf("Please input file name(including file type, example: testing.S): ");
-    scanf("%s", &ASM_File_Name);
-    
-    printf("Please input output file name to store proccessed file (including .txt, example: machine.txt): ");
-    scanf("%s", &Machine_File_Name);
+    //printf("Please input file name(including file type, example: testing.S): ");
+    //scanf("%s", &ASM_File_Name_Input);
+    strcat(ASM_File_Name,argv[1]);
+
+    //printf("Please input output file name to store proccessed file (including .txt, example: machine.txt): ");
+    //scanf("%s", &Machine_File_Name);
+    strcat(Machine_File_Name,argv[2]);
     printf("\n");
     //strncpy(Machine_File_Name, ASM_File_Name, strlen(ASM_File_Name) - 2);
     //strcat(Machine_File_Name, "_machine.txt\0");
