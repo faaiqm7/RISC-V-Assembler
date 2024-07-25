@@ -43,6 +43,7 @@ int main(void) {
     int dec_instruct_address = 0;
     char buffer[BUFFER_SIZE];
     char prev_buffer[BUFFER_SIZE];
+    char buffer_funct_input[BUFFER_SIZE];
     char buffer_instruction[6];
 
     /*/////////////////////
@@ -94,13 +95,16 @@ int main(void) {
             {
                 buffer_instruction[i] = tolower(buffer_instruction[i]);
             }
+
             //IRII (I-Type Instructions)
             if(strncmp(buffer_instruction, "addi", 4) == 0 || strncmp(buffer_instruction, "andi", 4) == 0 || strncmp(buffer_instruction, "ori", 3) == 0 ||
                strncmp(buffer_instruction, "xori", 4) == 0 || strncmp(buffer_instruction, "slti", 4) == 0 || strncmp(buffer_instruction, "nop", 3) == 0 ||
-               strncmp(buffer_instruction, "SLLI", 4) == 0 || strncmp(buffer_instruction, "SRLI", 4) == 0 || strncmp(buffer_instruction, "srai", 4) == 0 ||
+               strncmp(buffer_instruction, "slli", 4) == 0 || strncmp(buffer_instruction, "srli", 4) == 0 || strncmp(buffer_instruction, "srai", 4) == 0 ||
                strncmp(buffer_instruction, "lui", 3) == 0  || strncmp(buffer_instruction, "auipc", 5) == 0)
             {
-                IRII_Handle(buffer, Machine_File, buffer_instruction);
+                strcpy(buffer_funct_input, strstr(buffer + k, " "));
+                removeSpaces(buffer_funct_input);
+                IRII_Handle(buffer_funct_input, Machine_File, buffer_instruction);
             }
             //IRRI (R-Type Instructions)
             else if(strncmp(buffer_instruction, "add", 3) == 0 || strncmp(buffer_instruction, "slt", 3) == 0 || strncmp(buffer_instruction, "sltu", 4) == 0 ||
@@ -108,29 +112,39 @@ int main(void) {
                     strncmp(buffer_instruction, "sll", 3) == 0 || strncmp(buffer_instruction, "srl", 3) == 0 || strncmp(buffer_instruction, "sub", 3) == 0 ||
                     strncmp(buffer_instruction, "sra", 3) == 0)
             {
-                IRRI_Handle(buffer, Machine_File, buffer_instruction);
+                strcpy(buffer_funct_input, strstr(buffer + k, " "));
+                removeSpaces(buffer_funct_input);
+                IRRI_Handle(buffer_funct_input, Machine_File, buffer_instruction);
             }
             //Control Transfer Instructions (J-Type Instructions)
             else if(strncmp(buffer_instruction, "jal", 3) == 0 || strncmp(buffer_instruction, "jalr", 4) == 0)
             {
-                CTI_Handle(buffer, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels);
+                strcpy(buffer_funct_input, strstr(buffer + k, " "));
+                removeSpaces(buffer_funct_input);
+                CTI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels);
             }
             //Conditional Branches (B-Type Instructions)
             else if(strncmp(buffer_instruction, "beq", 3) == 0 || strncmp(buffer_instruction, "bne", 3) == 0 ||
                     strncmp(buffer_instruction, "blt", 3) == 0 || strncmp(buffer_instruction, "bge", 3) == 0) 
             {
-
+                strcpy(buffer_funct_input, strstr(buffer + k, " "));
+                removeSpaces(buffer_funct_input);
+                CBI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels);
             }
             //Load Instructions (I-Type Instructions)
             else if(strncmp(buffer_instruction, "lw", 2) == 0 || strncmp(buffer_instruction, "lh", 2) == 0 || strncmp(buffer_instruction, "lhu", 3) == 0 ||
                     strncmp(buffer_instruction, "lb", 2) == 0 || strncmp(buffer_instruction, "lbu", 3) == 0)
             {
-
-            }
+                strcpy(buffer_funct_input, strstr(buffer + k, " "));
+                removeSpaces(buffer_funct_input);
+                LI_Handle(buffer_funct_input, Machine_File, buffer_instruction);
+            }   
             //Store Instructions (S-Type Instructions)
             else if(strncmp(buffer_instruction, "sw", 2) == 0 || strncmp(buffer_instruction, "sh", 2) == 0 || strncmp(buffer_instruction, "sb", 2) == 0 )
             {
-
+                strcpy(buffer_funct_input, strstr(buffer + k, " "));
+                removeSpaces(buffer_funct_input);
+                SI_Handle(buffer_funct_input, Machine_File, buffer_instruction);
             }
             else if(check_label_exists(buffer) == 0)
             {
@@ -281,6 +295,7 @@ int check_label_exists(char buffer_instruction_input[BUFFER_SIZE])
 //returns the memory address of a label
 int return_labels_memory_address(int file_length_input, char buffer_instruction_input[BUFFER_SIZE], char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels)
 {
+    //printf("%s\n", buffer_instruction_input);
     for(int i = 0; i < number_of_labels; i++)
     {
         if(strstr(labels_input[0] + 64*i,buffer_instruction_input) != NULL)
@@ -359,6 +374,19 @@ void addOpCodeToBufferMachine(char buffer_machine_input[33], char opcode_Input[7
     }
 }
 
+//removes spaces from input
+void removeSpaces(char *str)
+{
+    // To keep track of non-space character count
+    int count = 0;
+    // Traverse the provided string. If the current character is not a space,
+    //move it to index 'count++'.
+    for (int i = 0; str[i]; i++)
+        if (str[i] != ' ')
+            str[count++] = str[i]; // here count is incremented
+    str[count] = '\0';
+}
+
 //Integer Register-Immediate Instructions Handler
 void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
 {
@@ -373,7 +401,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
             addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
             //Input RD (BITS [11:7])
-            addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
+            addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, "x");
 
             if(strncmp(instruction_header,"addi", 4) == 0)
             {
@@ -450,7 +478,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
         //Input RD (BITS [11:7])
-        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
+        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, "x");
 
         //imm[11:5] BITS[31:25]
         buffer_machine[0] = 0;
@@ -500,7 +528,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
         addToBufferMachine(buffer_instruction_input,20,7,buffer_machine,31,19,0, 1, '#'); 
 
         //Input RD (BITS [11:7])
-        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
+        addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, "x");
 
         if(strncmp(instruction_header, "lui", 3) == 0)
         {
@@ -533,7 +561,7 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
     //Input RD (BITS [11:7])
-    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, "x");
 
     //Input opcode (BITS [6:0])
     addOpCodeToBufferMachine(buffer_machine, "0110011");
@@ -657,7 +685,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
             }
             else
             {
-                printf("\nERROR: Jump (JALR) exceeds allowed amount\n");
+                printf("\nERROR: Jump (JALR)[%d] exceeds allowed amount\n", atoi(imm_string));
             }
         }
         else
@@ -670,10 +698,10 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
             {
                 j++;
             }
-            char label_modified[j + 2];
-            label_modified[j] = ':';
-            label_modified[j+1] = '\0';
-            strncpy(label_modified, label_input_instruct, j);
+            char label_modified[j + 1];
+            strncpy(label_modified, label_input_instruct, j-1);
+            label_modified[j-1] = ':';
+            label_modified[j] = '\0';
 
             //Convert a label to a memory address
             if(return_labels_memory_address(file_length_input, label_modified, labels_input, &labels_mem_address_input, &number_of_labels) <= 4096)
@@ -682,7 +710,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
             } 
             else
             {
-                printf("\nERROR: Jump from label (JALR) exceeds allowed amount\n");
+                printf("\nERROR: Jump (JALR)[%d] exceeds allowed amount\n", return_labels_memory_address(file_length_input, label_modified, labels_input, &labels_mem_address_input, &number_of_labels));
             }
         }
         for(int i = 0; i < 12; i++)
@@ -716,7 +744,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
             }
             else
             {
-                printf("\nERROR: Jump (JAL) exceeds allowed amount\n");
+                printf("\nERROR: Jump (JAL)[%d] exceeds allowed amount\n", atoi(imm_string));
             }
         }
         else
@@ -740,7 +768,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
             }
             else
             {
-                printf("\nERROR: Jump Label (JAL) exceeds allowed amount\n");
+                printf("\nERROR: Jump Label (JAL)[%d] exceeds allowed amount\n", return_labels_memory_address(file_length_input, label_modified, labels_input, labels_mem_address_input, number_of_labels));
             }
         }
         
@@ -761,7 +789,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     }
 
     //Input RD (BITS [11:7])
-    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, "x");
     
     //New Line Character (not related)
     buffer_machine[32] = '\0';
@@ -790,7 +818,7 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,24,4,0, 2, ",x");
 
     //Input RS1 (BITS [19:15])
-    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, " x");
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, "x");
 
     //Input opcode (BITS [6:0])
     addOpCodeToBufferMachine(buffer_machine, "1100011"); 
@@ -906,7 +934,7 @@ void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
     //Input RD (BITS [11:7])
-    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, " x");
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,11,4,0, 2, "x");
 
     //Input opcode (BITS [6:0])
     addOpCodeToBufferMachine(buffer_machine, "0000011"); 
@@ -959,7 +987,7 @@ void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,19,4,0, 2, ",x");
 
     //Input RS2 (BITS [24:20])
-    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,24,4,0, 2, " x");
+    addToBufferMachine(buffer_instruction_input,5,2,buffer_machine,24,4,0, 2, "x");
 
     //Input opcode (BITS [6:0])
     addOpCodeToBufferMachine(buffer_machine, "0100011"); 
