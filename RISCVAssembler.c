@@ -48,11 +48,13 @@ int main(void) {
     /*/////////////////////
     //   Read from FILE  //
     *//////////////////////
-    printf("Please input file name(including file type): ");
+    printf("Please input file name(including file type, example: testing.S): ");
     scanf("%s", &ASM_File_Name);
-
-    strncpy(Machine_File_Name, ASM_File_Name, strlen(ASM_File_Name) - 2);
-    strcat(Machine_File_Name, "_machine.txt\0");
+    
+    printf("Please input output file name to store proccessed file (including .txt, example: machine.txt): ");
+    scanf("%s", &Machine_File_Name);
+    //strncpy(Machine_File_Name, ASM_File_Name, strlen(ASM_File_Name) - 2);
+    //strcat(Machine_File_Name, "_machine.txt\0");
 
     FILE *ASM_File, *Machine_File;
     if((ASM_File = fopen(ASM_File_Name, "r")) == NULL)
@@ -171,6 +173,7 @@ int main(void) {
     printf("\n\nFile processing finished\n\n");
     fclose(ASM_File);
     fclose(Machine_File);
+    system("PAUSE");
     
 }
 
