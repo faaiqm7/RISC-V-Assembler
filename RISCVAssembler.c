@@ -28,12 +28,13 @@ void addFunct3ToBufferMachine(char buffer_machine_input[33], char funct3_Input[3
 void addFunct7ToBufferMachine(char buffer_machine_input[33], char funct7_Input[7]);
 void addOpCodeToBufferMachine(char buffer_machine_input[33], char opcode_Input[7]);
 void removeSpacesAndLowerCase(char *str);
-void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
-void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5]);
-void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input);
-void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input);
-void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6]);
-void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6]);
+void binary2hex(char hex_string_input[9], char buffer_machine_input[33]);
+void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5], char file_type_input[3]);
+void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5], char file_type_input[3]);
+void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[5], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input, char file_type_input[3]);
+void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input, char file_type_input[3]);
+void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], char file_type_input[3]);
+void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], char file_type_input[3]);
 
 int main(int argc, char **argv) {
 
@@ -47,6 +48,7 @@ int main(int argc, char **argv) {
     char prev_buffer[BUFFER_SIZE];
     char buffer_funct_input[BUFFER_SIZE];
     char buffer_instruction[6];
+    char file_type[3];
 
     /*/////////////////////
     //   Read from FILE  //
@@ -54,10 +56,13 @@ int main(int argc, char **argv) {
     //printf("Please input file name(including file type, example: testing.S): ");
     //scanf("%s", &ASM_File_Name_Input);
     strcat(ASM_File_Name,argv[1]);
-
     //printf("Please input output file name to store proccessed file (including .txt, example: machine.txt): ");
     //scanf("%s", &Machine_File_Name);
     strcat(Machine_File_Name,argv[2]);
+
+
+    //decides whether it is binary output ("-b") or hex output ("-h")
+    strcat(file_type, argv[3]);
     printf("\n");
     //strncpy(Machine_File_Name, ASM_File_Name, strlen(ASM_File_Name) - 2);
     //strcat(Machine_File_Name, "_machine.txt\0");
@@ -136,7 +141,7 @@ int main(int argc, char **argv) {
             {
                 strcpy(buffer_funct_input, strstr(buffer + k, " "));
                 removeSpacesAndLowerCase(buffer_funct_input);
-                IRII_Handle(buffer_funct_input, Machine_File, buffer_instruction);
+                IRII_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_type);
             }
             //IRRI (R-Type Instructions)
             else if(strncmp(buffer_instruction, "add", 3) == 0 || strncmp(buffer_instruction, "slt", 3) == 0 || strncmp(buffer_instruction, "sltu", 4) == 0 ||
@@ -146,14 +151,14 @@ int main(int argc, char **argv) {
             {
                 strcpy(buffer_funct_input, strstr(buffer + k, " "));
                 removeSpacesAndLowerCase(buffer_funct_input);
-                IRRI_Handle(buffer_funct_input, Machine_File, buffer_instruction);
+                IRRI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_type);
             }
             //Control Transfer Instructions (J-Type Instructions)
             else if(strncmp(buffer_instruction, "jal", 3) == 0 || strncmp(buffer_instruction, "jalr", 4) == 0)
             {
                 strcpy(buffer_funct_input, strstr(buffer + k, " "));
                 removeSpacesAndLowerCase(buffer_funct_input);
-                CTI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels, dec_instruct_address, current_line);
+                CTI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels, dec_instruct_address, current_line, file_type);
             }
             //Conditional Branches (B-Type Instructions)
             else if(strncmp(buffer_instruction, "beq", 3) == 0 || strncmp(buffer_instruction, "bne", 3) == 0 ||
@@ -161,7 +166,7 @@ int main(int argc, char **argv) {
             {
                 strcpy(buffer_funct_input, strstr(buffer + k, " "));
                 removeSpacesAndLowerCase(buffer_funct_input);
-                CBI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels, dec_instruct_address, current_line);
+                CBI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_length, labels, labels_mem_address, number_of_labels, dec_instruct_address, current_line, file_type);
             }
             //Load Instructions (I-Type Instructions)
             else if(strncmp(buffer_instruction, "lw", 2) == 0 || strncmp(buffer_instruction, "lh", 2) == 0 || strncmp(buffer_instruction, "lhu", 3) == 0 ||
@@ -169,14 +174,14 @@ int main(int argc, char **argv) {
             {
                 strcpy(buffer_funct_input, strstr(buffer + k, " "));
                 removeSpacesAndLowerCase(buffer_funct_input);
-                LI_Handle(buffer_funct_input, Machine_File, buffer_instruction);
+                LI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_type);
             }   
             //Store Instructions (S-Type Instructions)
             else if(strncmp(buffer_instruction, "sw", 2) == 0 || strncmp(buffer_instruction, "sh", 2) == 0 || strncmp(buffer_instruction, "sb", 2) == 0 )
             {
                 strcpy(buffer_funct_input, strstr(buffer + k, " "));
                 removeSpacesAndLowerCase(buffer_funct_input);
-                SI_Handle(buffer_funct_input, Machine_File, buffer_instruction);
+                SI_Handle(buffer_funct_input, Machine_File, buffer_instruction, file_type);
             }
             else if(check_label_exists(buffer) == 0)
             {
@@ -436,8 +441,86 @@ void removeSpacesAndLowerCase(char *str)
     str[count] = '\0';
 }
 
+void binary2hex(char hex_string_input[9], char buffer_machine_input[33])
+{
+    int i = 0;
+    while(i < 8)
+    {
+        if(strncmp(buffer_machine_input + 4*i, "0000", 4) == 0)
+        {
+            hex_string_input[i] = '0';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "0001", 4) == 0)
+        {
+            hex_string_input[i] = '1';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "0010", 4) == 0)
+        {
+            hex_string_input[i] = '2';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "0011", 4) == 0)
+        {
+            hex_string_input[i] = '3';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "0100", 4) == 0)
+        {
+            hex_string_input[i] = '4';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "0101", 4) == 0)
+        {
+            hex_string_input[i] = '5';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "0110", 4) == 0)
+        {
+            hex_string_input[i] = '6';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "0111", 4) == 0)
+        {
+            hex_string_input[i] = '7';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1000", 4) == 0)
+        {
+            hex_string_input[i] = '8';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1001", 4) == 0)
+        {
+            hex_string_input[i] = '9';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1010", 4) == 0)
+        {
+            hex_string_input[i] = 'A';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1011", 4) == 0)
+        {
+            hex_string_input[i] = 'B';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1100", 4) == 0)
+        {
+            hex_string_input[i] = 'C';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1101", 4) == 0)
+        {
+            hex_string_input[i] = 'D';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1110", 4) == 0)
+        {
+            hex_string_input[i] = 'E';
+        }
+        else if(strncmp(buffer_machine_input + 4*i, "1111", 4) == 0)
+        {
+            hex_string_input[i] = 'F';
+        }
+        else
+        {
+            printf("ERROR BINARY TO HEX");
+        }
+        i++;
+    }
+    hex_string_input[8] = '\0';
+}
+
 //Integer Register-Immediate Instructions Handler
-void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
+void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], char file_type_input[3])
 {
     char buffer_machine[33];
     if(strncmp(instruction_header,"addi", 4) == 0 || strncmp(instruction_header,"andi", 4) == 0 || strncmp(instruction_header,"ori", 3) == 0 || strncmp(instruction_header,"xori", 4) == 0 || 
@@ -594,11 +677,21 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
 
     //New Line Character (not related)
     buffer_machine[32] = '\0';
-    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
+    if(strstr(file_type_input, "-h") != NULL)
+    {
+        //Convert to HEX
+        char hex_string[9];
+        binary2hex(hex_string, buffer_machine);
+        fprintf(MACHINE_File_Input, "%s\n", hex_string);
+    }
+    else
+    {
+        fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
+    } 
 }
 
 //Integer Register-Register Instructions Handler
-void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
+void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], char file_type_input[3])
 {
     //ADD rd,rs1,rs2
     char buffer_machine[33];
@@ -702,11 +795,21 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     
     //New Line Character (not related)
     buffer_machine[32] = '\0';
-    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
+    if(strstr(file_type_input, "-h") != NULL)
+    {
+        //Convert to HEX
+        char hex_string[9];
+        binary2hex(hex_string, buffer_machine);
+        fprintf(MACHINE_File_Input, "%s\n", hex_string);
+    }
+    else
+    {
+        fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
+    } 
 }
 
 //Control Transfer Instructions Handler
-void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input)
+void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input, char file_type_input[3])
 {
     //Ex. JAL x7,#imm <-can also be a label
     //Jump to #imm and save PC + 4 to x7
@@ -843,12 +946,22 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     
     //New Line Character (not related)
     buffer_machine[32] = '\0';
-    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
+    if(strstr(file_type_input, "-h") != NULL)
+    {
+        //Convert to HEX
+        char hex_string[9];
+        binary2hex(hex_string, buffer_machine);
+        fprintf(MACHINE_File_Input, "%s\n", hex_string);
+    }
+    else
+    {
+        fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
+    }  
 
 }
 
 //Conditional Branches Instructions Handler
-void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input)
+void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], int file_length_input, char labels_input[file_length_input][32], int* labels_mem_address_input, int* number_of_labels, int current_mem_address, int current_line_input, char file_type_input[3])
 {
     //Ex. BEQ x7,x6, #imm <-can also be a label
     //Jump to #imm if x7 == x6
@@ -949,11 +1062,21 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
 
     //New Line Character (not related)
     buffer_machine[32] = '\0';
-    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
+    if(strstr(file_type_input, "-h") != NULL)
+    {
+        //Convert to HEX
+        char hex_string[9];
+        binary2hex(hex_string, buffer_machine);
+        fprintf(MACHINE_File_Input, "%s\n", hex_string);
+    }
+    else
+    {
+        fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
+    } 
 }
 
 //Load Instructions Handler
-void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
+void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], char file_type_input[3])
 {
     //examples
     //lw   # rd = mem[rs1+imm]       ; load word
@@ -1017,11 +1140,21 @@ void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
 
     //New Line Character (not related)
     buffer_machine[32] = '\0';
-    fprintf(MACHINE_File_Input, "%s\n", buffer_machine); 
+    if(strstr(file_type_input, "-h") != NULL)
+    {
+        //Convert to HEX
+        char hex_string[9];
+        binary2hex(hex_string, buffer_machine);
+        fprintf(MACHINE_File_Input, "%s\n", hex_string);
+    }
+    else
+    {
+        fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
+    }  
 }
 
 //Store Instructions Handler
-void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6])
+void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_Input, char instruction_header[6], char file_type_input[3])
 {
     //examples
     //sw  # mem[rs1+imm] = rs2             ; store word
@@ -1067,5 +1200,15 @@ void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
 
     //New Line Character (not related)
     buffer_machine[32] = '\0';
-    fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
+    if(strstr(file_type_input, "-h") != NULL)
+    {
+        //Convert to HEX
+        char hex_string[9];
+        binary2hex(hex_string, buffer_machine);
+        fprintf(MACHINE_File_Input, "%s\n", hex_string);
+    }
+    else
+    {
+        fprintf(MACHINE_File_Input, "%s\n", buffer_machine);
+    } 
 }
