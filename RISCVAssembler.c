@@ -441,74 +441,77 @@ void removeSpacesAndLowerCase(char *str)
     str[count] = '\0';
 }
 
-void binary2hex(char hex_string_input[9], char buffer_machine_input[33])
+void binary2hex(char hex_string_input[11], char buffer_machine_input[33])
 {
     int i = 0;
+    hex_string_input[0] = '0';
+    hex_string_input[1] = 'x';
+
     while(i < 8)
     {
         if(strncmp(buffer_machine_input + 4*i, "0000", 4) == 0)
         {
-            hex_string_input[i] = '0';
+            hex_string_input[i+2] = '0';
         }
         else if(strncmp(buffer_machine_input + 4*i, "0001", 4) == 0)
         {
-            hex_string_input[i] = '1';
+            hex_string_input[i+2] = '1';
         }
         else if(strncmp(buffer_machine_input + 4*i, "0010", 4) == 0)
         {
-            hex_string_input[i] = '2';
+            hex_string_input[i+2] = '2';
         }
         else if(strncmp(buffer_machine_input + 4*i, "0011", 4) == 0)
         {
-            hex_string_input[i] = '3';
+            hex_string_input[i+2] = '3';
         }
         else if(strncmp(buffer_machine_input + 4*i, "0100", 4) == 0)
         {
-            hex_string_input[i] = '4';
+            hex_string_input[i+2] = '4';
         }
         else if(strncmp(buffer_machine_input + 4*i, "0101", 4) == 0)
         {
-            hex_string_input[i] = '5';
+            hex_string_input[i+2] = '5';
         }
         else if(strncmp(buffer_machine_input + 4*i, "0110", 4) == 0)
         {
-            hex_string_input[i] = '6';
+            hex_string_input[i+2] = '6';
         }
         else if(strncmp(buffer_machine_input + 4*i, "0111", 4) == 0)
         {
-            hex_string_input[i] = '7';
+            hex_string_input[i+2] = '7';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1000", 4) == 0)
         {
-            hex_string_input[i] = '8';
+            hex_string_input[i+2] = '8';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1001", 4) == 0)
         {
-            hex_string_input[i] = '9';
+            hex_string_input[i+2] = '9';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1010", 4) == 0)
         {
-            hex_string_input[i] = 'A';
+            hex_string_input[i+2] = 'a';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1011", 4) == 0)
         {
-            hex_string_input[i] = 'B';
+            hex_string_input[i+2] = 'b';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1100", 4) == 0)
         {
-            hex_string_input[i] = 'C';
+            hex_string_input[i+2] = 'c';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1101", 4) == 0)
         {
-            hex_string_input[i] = 'D';
+            hex_string_input[i+2] = 'd';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1110", 4) == 0)
         {
-            hex_string_input[i] = 'E';
+            hex_string_input[i+2] = 'e';
         }
         else if(strncmp(buffer_machine_input + 4*i, "1111", 4) == 0)
         {
-            hex_string_input[i] = 'F';
+            hex_string_input[i+2] = 'f';
         }
         else
         {
@@ -516,7 +519,7 @@ void binary2hex(char hex_string_input[9], char buffer_machine_input[33])
         }
         i++;
     }
-    hex_string_input[8] = '\0';
+    hex_string_input[10] = '\0';
 }
 
 //Integer Register-Immediate Instructions Handler
@@ -680,7 +683,7 @@ void IRII_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     if(strstr(file_type_input, "-h") != NULL)
     {
         //Convert to HEX
-        char hex_string[9];
+        char hex_string[11];
         binary2hex(hex_string, buffer_machine);
         fprintf(MACHINE_File_Input, "%s\n", hex_string);
     }
@@ -798,7 +801,7 @@ void IRRI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_
     if(strstr(file_type_input, "-h") != NULL)
     {
         //Convert to HEX
-        char hex_string[9];
+        char hex_string[11];
         binary2hex(hex_string, buffer_machine);
         fprintf(MACHINE_File_Input, "%s\n", hex_string);
     }
@@ -949,7 +952,7 @@ void CTI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     if(strstr(file_type_input, "-h") != NULL)
     {
         //Convert to HEX
-        char hex_string[9];
+        char hex_string[11];
         binary2hex(hex_string, buffer_machine);
         fprintf(MACHINE_File_Input, "%s\n", hex_string);
     }
@@ -1065,7 +1068,7 @@ void CBI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_I
     if(strstr(file_type_input, "-h") != NULL)
     {
         //Convert to HEX
-        char hex_string[9];
+        char hex_string[11];
         binary2hex(hex_string, buffer_machine);
         fprintf(MACHINE_File_Input, "%s\n", hex_string);
     }
@@ -1143,7 +1146,7 @@ void LI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     if(strstr(file_type_input, "-h") != NULL)
     {
         //Convert to HEX
-        char hex_string[9];
+        char hex_string[11];
         binary2hex(hex_string, buffer_machine);
         fprintf(MACHINE_File_Input, "%s\n", hex_string);
     }
@@ -1203,7 +1206,7 @@ void SI_Handle(char buffer_instruction_input[BUFFER_SIZE], FILE* MACHINE_File_In
     if(strstr(file_type_input, "-h") != NULL)
     {
         //Convert to HEX
-        char hex_string[9];
+        char hex_string[11];
         binary2hex(hex_string, buffer_machine);
         fprintf(MACHINE_File_Input, "%s\n", hex_string);
     }
